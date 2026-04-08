@@ -1,0 +1,144 @@
+// RecePita minimal working schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  expenses      Expense[]
+  draftExpenses DraftExpense[]
+  invoices      Invoice[]
+  profile UserProfile?
+  isEmailVerified Boolean @default(false)
+}
+
+model VerificationToken {
+  token     String   @id
+  userId    String
+  email     String
+  expiresAt DateTime
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  date          DateTime
+  amount        Int
+  vendor        String
+  category      String?
+  memo          String?
+  items         Json?
+  subtotal      Int?
+  tax           Int?
+  total         Int?
+  paymentMethod String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  lineItems ExpenseItem[]
+  files     ReceiptFile[]
+
+  @@index([userId, date])
+}
+
+model ExpenseItem {
+  id        String  @id @default(cuid())
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  expenseId String
+
+  name      String
+  qty       Int      @default(1)
+  unitPrice Int      @default(0)
+  taxRate   Int      @default(10)
+  amount    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([expenseId])
+}
+
+model ReceiptFile {
+  id        String   @id @default(uuid())
+  storage   String
+  path      String
+  original  String
+  mime      String?
+  size      Int?
+  createdAt DateTime @default(now())
+
+  expense   Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  expenseId String?
+
+  @@index([expenseId])
+}
+
+model DraftExpense {
+  id             String   @id @default(cuid())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  registeredDate DateTime @default(now())
+  tradeDate      DateTime
+  amount         Int
+  vendor         String
+  category       String?
+  memo           String?
+  itemsSummary   String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Invoice {
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  issueDate    DateTime // ← DateTime 型
+  client       String
+  amount       Int
+  memo         String?
+  itemsSummary String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, issueDate])
+}
+
+model UserProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  lastName      String?
+  firstName     String?
+  lastNameKana  String?
+  firstNameKana String?
+  birthDate     DateTime?
+  gender        String?
+  phone         String?
+  postalCode    String?
+  prefecture    String?
+  city          String?
+  address1      String?
+  address2      String?
+  businessName  String?
+  startDate     DateTime?
+  occupation    String?
+  invoiceNo     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 外部キー側（userId が一意 → 1:1）
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+

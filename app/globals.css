@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light theme tokens */
+:root{
+  --bg:#F9FAFB; --card:#FFFFFF; --fg:#1F2937; --muted:#6B7280; --border:#E5E7EB;
+}
+/* Dark theme tokens */
+.dark{
+  --bg:#0D1512; --card:#0F1A17; --fg:#E6F4EE; --muted:#99B2A5; --border:rgba(153,178,165,.25);
+}
+
+html,body{height:100%}
+body{background:var(--bg); color:var(--fg)}
+a{color:inherit}

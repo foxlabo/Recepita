@@ -1,0 +1,36 @@
+import Link from 'next/link'
+import dynamic from 'next/dynamic'
+import { getSession } from '@/lib/auth-server'
+
+const UserMenu = dynamic(() => import('@/components/UserMenu'), { ssr: false })
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession()
+  const email = (session as any)?.email as string | undefined
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="h-16 bg-[var(--card)] border-b border-[var(--border)] flex items-center px-4 shadow-sm">
+        <Link href="/" className="font-bold text-recepita" style={{ fontSize: 24 }}>
+          Recepita
+        </Link>
+        <div className="ml-auto">
+          <UserMenu email={email} />
+        </div>
+      </header>
+
+      <main className="flex flex-1 min-h-0">
+        <nav className="w-56 bg-[var(--card)] border-r border-[var(--border)] p-3">
+          <ul className="space-y-2">
+            <li><Link className="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-[#101a16]" href="/dashboard">ダッシュボード</Link></li>
+            <li><Link className="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-[#101a16]" href="/expenses">経費登録</Link></li>
+            <li><Link className="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-[#101a16]" href="/receipts">経費一覧</Link></li>
+            <li><Link className="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-[#101a16]" href="/invoices">売上登録</Link></li>
+            <li><Link className="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-[#101a16]" href="/settings">設定</Link></li>
+          </ul>
+        </nav>
+        <section className="flex-1 overflow-auto p-5">{children}</section>
+      </main>
+    </div>
+  )
+}

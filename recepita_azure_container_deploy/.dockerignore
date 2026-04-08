@@ -1,0 +1,12 @@
+.git
+.github
+.vscode
+node_modules
+.next/cache
+.next/types
+**/*.log
+npm-debug.log*
+.env*
+Dockerfile
+docker-compose.yml
+docker
