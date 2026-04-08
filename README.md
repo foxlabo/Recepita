@@ -94,7 +94,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Local Demo Notes
 
-Without Azure Communication Services mail settings, sign-up can create a user but email verification will not complete automatically. In that case, mark the user as verified locally before logging in.
+Without Azure Communication Services mail settings, sign-up will fail because verification mail delivery is required. For local evaluation, create a user manually or mark a local user as verified before logging in.
 
 One simple option is Prisma Studio:
 

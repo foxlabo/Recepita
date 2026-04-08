@@ -8,15 +8,19 @@ const MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
 export type Session = { userId: string; email: string }
 
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET?.trim()
+  if (!secret) throw new Error('JWT_SECRET is required')
+  return secret
+}
+
 export function signSession(payload: Session) {
-  const secret = process.env.JWT_SECRET || 'dev-secret-change'
-  return jwt.sign(payload, secret, { expiresIn: MAX_AGE })
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: MAX_AGE })
 }
 
 export function verifySession(token: string): Session | null {
   try {
-    const secret = process.env.JWT_SECRET || 'dev-secret-change'
-    return jwt.verify(token, secret) as Session
+    return jwt.verify(token, getJwtSecret()) as Session
   } catch {
     return null
   }
@@ -40,8 +44,7 @@ export function getSession(): Session | null {
   const c = cookies().get(COOKIE)?.value
   if (!c) return null
   try {
-    const secret = process.env.JWT_SECRET || 'dev-secret-change'
-    return jwt.verify(c, secret) as Session
+    return jwt.verify(c, getJwtSecret()) as Session
   } catch (e: any) {
     console.warn('getSession.verify.failed', e?.name || e)
     return null

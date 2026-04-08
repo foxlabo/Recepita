@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
   // --- ユーザー作成（未認証） ---
   const hashed = await bcrypt.hash(password, 10);
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       email,
       password: hashed,
@@ -30,13 +30,26 @@ export async function POST(req: Request) {
   // ★ NEXTAUTH_URL は使わず、「今のリクエストの origin」をそのまま使う
   const base = new URL(req.url).origin;
 
-  await fetch(`${base}/api/account/email/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  }).catch((e) => {
+  try {
+    const emailRes = await fetch(`${base}/api/account/email/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!emailRes.ok) {
+      const body = await emailRes.json().catch(() => ({}));
+      throw new Error(body?.error || "failed to send verification email");
+    }
+  } catch (e) {
     console.error("[EMAIL REGISTER CALL ERROR]", e);
-  });
+    await prisma.verificationToken.deleteMany({ where: { userId: user.id } }).catch(() => {});
+    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    return NextResponse.json(
+      { error: "確認メールの送信に失敗しました。時間をおいて再度お試しください。" },
+      { status: 503 }
+    );
+  }
 
   return NextResponse.json({ ok: true, verifyRequired: true });
 }

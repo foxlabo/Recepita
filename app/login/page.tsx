@@ -23,6 +23,7 @@ export default function Login() {
   const changed = sp.get('email_changed');
   const reason = sp.get('reason');
   const deleted = sp.get('deleted');
+  const verified = sp.get('verified');
   const next = sp.get('next') || '/dashboard';
 
   async function submit(e: any) {
@@ -61,7 +62,7 @@ export default function Login() {
   async function resend() {
     try {
       setLoading(true);
-      const r = await fetch('/api/account/email/request', {
+      const r = await fetch('/api/account/email/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -83,6 +84,11 @@ export default function Login() {
           {changed === '1' && (
             <div className="mt-4 mb-2 p-3 rounded text-sm bg-green-50 text-green-800">
               メール認証が完了しました。ログインしてください。
+            </div>
+          )}
+          {verified === '1' && (
+            <div className="mt-4 mb-2 p-3 rounded text-sm bg-green-50 text-green-800">
+              メール確認が完了しました。ログインしてください。
             </div>
           )}
           {changed === '0' && reason === 'expired' && (
