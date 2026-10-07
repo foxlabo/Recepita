@@ -88,16 +88,26 @@ export default function Settings() {
               <div className="grid gap-3">
                 <h3 className="font-semibold text-lg">パスワード変更</h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">現在のパスワード</label>
+                  <label className="text-sm text-(--muted)" htmlFor="settings-current-password">
+                    現在のパスワード
+                  </label>
                   <Input
+                    id="settings-current-password"
                     type="password"
                     value={pw.current}
                     onChange={(e) => setPw({ ...pw, current: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">新しいパスワード</label>
-                  <Input type="password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} />
+                  <label className="text-sm text-(--muted)" htmlFor="settings-new-password">
+                    新しいパスワード
+                  </label>
+                  <Input
+                    id="settings-new-password"
+                    type="password"
+                    value={pw.next}
+                    onChange={(e) => setPw({ ...pw, next: e.target.value })}
+                  />
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -143,12 +153,22 @@ export default function Settings() {
               <div className="grid gap-3 border-t border-(--border) pt-4">
                 <h3 className="font-semibold text-lg">メールアドレス変更</h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">新しいメールアドレス</label>
-                  <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                  <label className="text-sm text-(--muted)" htmlFor="settings-new-email">
+                    新しいメールアドレス
+                  </label>
+                  <Input
+                    id="settings-new-email"
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">現在のパスワード（確認）</label>
+                  <label className="text-sm text-(--muted)" htmlFor="settings-email-current-password">
+                    現在のパスワード（確認）
+                  </label>
                   <Input
+                    id="settings-email-current-password"
                     type="password"
                     value={pw.current}
                     onChange={(e) => setPw({ ...pw, current: e.target.value })}
@@ -197,12 +217,26 @@ export default function Settings() {
               <div className="grid gap-3 border-t border-(--border) pt-4">
                 <h3 className="font-semibold text-lg text-red-600">アカウント削除</h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">メールアドレス</label>
-                  <Input type="email" value={deleteEmail} onChange={(e) => setDeleteEmail(e.target.value)} />
+                  <label className="text-sm text-(--muted)" htmlFor="settings-delete-email">
+                    メールアドレス
+                  </label>
+                  <Input
+                    id="settings-delete-email"
+                    type="email"
+                    value={deleteEmail}
+                    onChange={(e) => setDeleteEmail(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">パスワード</label>
-                  <Input type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} />
+                  <label className="text-sm text-(--muted)" htmlFor="settings-delete-password">
+                    パスワード
+                  </label>
+                  <Input
+                    id="settings-delete-password"
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Button
@@ -272,15 +306,21 @@ export default function Settings() {
               {/* 氏名 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">姓</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-last-name">
+                    姓
+                  </label>
                   <Input
+                    id="profile-last-name"
                     value={profile.lastName || ''}
                     onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">名</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-first-name">
+                    名
+                  </label>
                   <Input
+                    id="profile-first-name"
                     value={profile.firstName || ''}
                     onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
                   />
@@ -290,15 +330,21 @@ export default function Settings() {
               {/* フリガナ */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">セイ（カナ）</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-last-name-kana">
+                    セイ（カナ）
+                  </label>
                   <Input
+                    id="profile-last-name-kana"
                     value={profile.lastNameKana || ''}
                     onChange={(e) => setProfile({ ...profile, lastNameKana: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">メイ（カナ）</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-first-name-kana">
+                    メイ（カナ）
+                  </label>
                   <Input
+                    id="profile-first-name-kana"
                     value={profile.firstNameKana || ''}
                     onChange={(e) => setProfile({ ...profile, firstNameKana: e.target.value })}
                   />
@@ -308,16 +354,22 @@ export default function Settings() {
               {/* 生年月日・性別 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">生年月日</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-birth-date">
+                    生年月日
+                  </label>
                   <Input
+                    id="profile-birth-date"
                     type="date"
                     value={profile.birthDate || ''}
                     onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">性別</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-gender">
+                    性別
+                  </label>
                   <select
+                    id="profile-gender"
                     value={profile.gender || ''}
                     onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
                     className="w-full rounded-md border border-(--border) bg-white dark:bg-(--card) px-3 py-2"
@@ -333,15 +385,21 @@ export default function Settings() {
               {/* 連絡先・住所 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">電話番号</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-phone">
+                    電話番号
+                  </label>
                   <Input
+                    id="profile-phone"
                     value={profile.phone || ''}
                     onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">郵便番号</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-postal-code">
+                    郵便番号
+                  </label>
                   <Input
+                    id="profile-postal-code"
                     placeholder="1000001"
                     value={profile.postalCode || ''}
                     onChange={(e) => setProfile({ ...profile, postalCode: e.target.value })}
@@ -351,15 +409,21 @@ export default function Settings() {
 
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">都道府県</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-prefecture">
+                    都道府県
+                  </label>
                   <Input
+                    id="profile-prefecture"
                     value={profile.prefecture || ''}
                     onChange={(e) => setProfile({ ...profile, prefecture: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">市区町村</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-city">
+                    市区町村
+                  </label>
                   <Input
+                    id="profile-city"
                     value={profile.city || ''}
                     onChange={(e) => setProfile({ ...profile, city: e.target.value })}
                   />
@@ -367,15 +431,21 @@ export default function Settings() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm text-(--muted)">番地</label>
+                <label className="text-sm text-(--muted)" htmlFor="profile-address1">
+                  番地
+                </label>
                 <Input
+                  id="profile-address1"
                   value={profile.address1 || ''}
                   onChange={(e) => setProfile({ ...profile, address1: e.target.value })}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-(--muted)">建物名等</label>
+                <label className="text-sm text-(--muted)" htmlFor="profile-address2">
+                  建物名等
+                </label>
                 <Input
+                  id="profile-address2"
                   value={profile.address2 || ''}
                   onChange={(e) => setProfile({ ...profile, address2: e.target.value })}
                 />
@@ -384,15 +454,21 @@ export default function Settings() {
               {/* 事業情報 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">屋号（事業所名）</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-business-name">
+                    屋号（事業所名）
+                  </label>
                   <Input
+                    id="profile-business-name"
                     value={profile.businessName || ''}
                     onChange={(e) => setProfile({ ...profile, businessName: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">開業日</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-start-date">
+                    開業日
+                  </label>
                   <Input
+                    id="profile-start-date"
                     type="date"
                     value={profile.startDate || ''}
                     onChange={(e) => setProfile({ ...profile, startDate: e.target.value })}
@@ -402,15 +478,21 @@ export default function Settings() {
 
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">業種／職種</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-occupation">
+                    業種／職種
+                  </label>
                   <Input
+                    id="profile-occupation"
                     value={profile.occupation || ''}
                     onChange={(e) => setProfile({ ...profile, occupation: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-(--muted)">登録番号（インボイス）</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-invoice-no">
+                    登録番号（インボイス）
+                  </label>
                   <Input
+                    id="profile-invoice-no"
                     placeholder="T1234567890123"
                     value={profile.invoiceNo || ''}
                     onChange={(e) => setProfile({ ...profile, invoiceNo: e.target.value })}
