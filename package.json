@@ -10,7 +10,8 @@
     "prisma:studio": "prisma studio",
     "lint": "biome check",
     "format": "biome format --write",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project unit"
   },
   "engines": {
     "node": ">=22"
