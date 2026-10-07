@@ -22,6 +22,7 @@ Recepita is a portfolio project for solo business owners and freelancers to mana
 - Azure Document Intelligence
 - Azure Communication Services
 - OpenAI API
+- Biome, Vitest, Playwright + axe-core (quality checks and tests)
 
 ## Local Setup
 
@@ -71,6 +72,20 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+## Checks and Tests
+
+| Command | What it runs |
+| --- | --- |
+| `npm run lint` | Biome: formatting check + lint (`npm run format` rewrites the formatting) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Unit tests (Vitest), no database needed |
+| `npm run test:integration` | Integration tests (Vitest) against PostgreSQL |
+| `npm run build && npm run test:e2e` | E2E tests (Playwright, Chromium) against `next start -p 4450`, incl. axe accessibility checks |
+
+Integration and E2E tests use `TEST_DATABASE_URL` (falling back to `DATABASE_URL`). The database name must contain `test`, e.g. `postgresql://user:pass@localhost:5432/recepita_test`; migrations are applied automatically and the tests only delete data they created. Before the first E2E run, install the browser with `npx playwright install chromium`.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs all of the above on pushes and pull requests to `main`.
 
 ## Environment Variables
 
