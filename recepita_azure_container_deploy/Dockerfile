@@ -1,45 +1,56 @@
-# ---- base ----
-FROM node:20-alpine AS base
-WORKDIR /app
-ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1
-RUN apk add --no-cache python3 make g++ libc6-compat
+# syntax=docker/dockerfile:1
+#
+# Build context: repository root.
+#   App image:        docker build -f recepita_azure_container_deploy/Dockerfile -t recepita .
+#   Migration image:  docker build -f recepita_azure_container_deploy/Dockerfile --target migrate -t recepita-migrate .
+#                     docker run --rm -e DATABASE_URL=... recepita-migrate
 
-# ---- deps（本番依存のみ）----
-FROM base AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+ARG NODE_IMAGE=node:22-alpine
 
-# ---- builder（devDepsも入れてbuild）----
-FROM base AS builder
+# ---- deps: all dependencies (build + prisma CLI) ----
+FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
-# ★ NODE_ENV=development は絶対に置かない
+RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
 RUN npm ci --include=dev
-COPY . .
-# Prisma → Next build（常に production で）
-RUN npx prisma generate && npm run build
 
-# ---- runner ----
-FROM node:20-alpine AS runner
+# ---- builder: prisma generate + next build (standalone output) ----
+FROM ${NODE_IMAGE} AS builder
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+# prisma.config.ts reads DATABASE_URL when loading; no connection is made at
+# build time, so a placeholder is enough. No real secrets are baked in.
+RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npm run build
+
+# ---- migrate: one-off job that applies Prisma migrations ----
+FROM ${NODE_IMAGE} AS migrate
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json prisma.config.ts ./
+COPY prisma ./prisma
+USER node
+CMD ["node_modules/.bin/prisma", "migrate", "deploy"]
+
+# ---- runner: minimal standalone server as a non-root user ----
+FROM ${NODE_IMAGE} AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    NEXT_TELEMETRY_DISABLED=1
-# 依存物
-COPY --from=deps /app/node_modules ./node_modules
-# Next standalone 出力
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-# 静的 / Prisma
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma ./prisma
-# ヘルスチェック & 起動
-HEALTHCHECK --interval=30s --timeout=5s --retries=5 \
-  CMD wget -qO- http://127.0.0.1:${PORT:-3000}/api/ping || exit 1
-COPY recepita_azure_container_deploy/docker/startup.sh /app/startup.sh
-RUN chmod +x /app/startup.sh
-EXPOSE 3000
-CMD ["/app/startup.sh"]
+    HOSTNAME=0.0.0.0
 
+RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --chown=nextjs:nodejs --chmod=0555 recepita_azure_container_deploy/docker/startup.sh ./startup.sh
+
+USER nextjs
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 \
+  CMD wget -qO- "http://127.0.0.1:${PORT}/api/ping" >/dev/null || exit 1
+CMD ["./startup.sh"]
