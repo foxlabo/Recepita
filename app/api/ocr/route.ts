@@ -8,6 +8,7 @@ import { HttpError, jsonError } from '@/lib/http';
 import { enforce, RATE_LIMITS } from '@/lib/rate-limit';
 import { inferExpenseCategory } from '@/lib/ai/expenseCategory';
 import { formatItemsText, itemsFromJson } from '@/lib/items';
+import { parseRetryAfter } from '@/lib/retry-after';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -165,14 +166,6 @@ function normalizeDetectedForTotals(raw: any): any {
 // ---------------------------------------------------------------- provider
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
-function parseRetryAfter(h?: string | null): number {
-  if (!h) return 0;
-  const n = Number(h);
-  if (Number.isFinite(n)) return Math.max(0, Math.floor(n * 1000));
-  const d = Date.parse(h);
-  return Number.isNaN(d) ? 0 : Math.max(0, d - Date.now());
-}
 
 type ProviderError = { message?: string; status?: number; retryAfter?: string | null };
 
