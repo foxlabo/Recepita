@@ -31,3 +31,8 @@ uploads
 source.zip
 docker-compose.yml
 *Zone.Identifier*
+
+# Test output
+playwright-report
+test-results
+blob-report

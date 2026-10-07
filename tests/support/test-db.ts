@@ -3,8 +3,10 @@
 // TEST_DATABASE_URL (or, when unset, DATABASE_URL) must name a database whose
 // name contains "test", so a misconfigured run can never wipe development or
 // production data. Tests only delete rows they created themselves.
+//
+// No import.meta here: Playwright loads this file as CommonJS.
 import { execFileSync } from 'node:child_process';
-import { createRequire } from 'node:module';
+import path from 'node:path';
 
 export function testDatabaseUrl(): string {
   const raw = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
@@ -26,9 +28,9 @@ export function testDatabaseUrl(): string {
   return raw;
 }
 
-/** Apply the Prisma migrations to the test database (idempotent). */
+/** Apply the Prisma migrations to the test database (idempotent). Run from the repository root. */
 export function migrateTestDatabase(url = testDatabaseUrl()): void {
-  const prismaCli = createRequire(import.meta.url).resolve('prisma/build/index.js');
+  const prismaCli = path.join(process.cwd(), 'node_modules', 'prisma', 'build', 'index.js');
   execFileSync(process.execPath, [prismaCli, 'migrate', 'deploy'], {
     env: { ...process.env, DATABASE_URL: url },
     stdio: ['ignore', 'ignore', 'inherit'],
