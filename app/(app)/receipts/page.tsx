@@ -42,7 +42,7 @@ const PAGE_SIZE = 50;
 const MAX_VISIBLE = 7; // 同時表示するページ番号の最大個数（必要に応じて 5〜9 程度に変更可）
 function pageRange(current: number, total: number, maxVisible = MAX_VISIBLE) {
   let start = Math.max(1, current - Math.floor(maxVisible / 2));
-  let end = Math.min(total, start + maxVisible - 1);
+  const end = Math.min(total, start + maxVisible - 1);
   // 端で個数が目減りしないよう再調整
   start = Math.max(1, Math.min(start, end - maxVisible + 1));
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
@@ -87,7 +87,7 @@ export default function ReceiptsList() {
         page: String(page),
         pageSize: String(PAGE_SIZE),
       });
-      const r = await fetch('/api/expenses/list?' + params.toString(), {
+      const r = await fetch(`/api/expenses/list?${params.toString()}`, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
@@ -175,11 +175,11 @@ export default function ReceiptsList() {
       });
       if (redirectIfUnauthorized(res)) return;
       if (!res.ok) {
-        alert('一括更新に失敗しました\n' + (await apiErrorMessage(res, '')));
+        alert(`一括更新に失敗しました\n${await apiErrorMessage(res, '')}`);
         return;
       }
       await load();
-      alert(targets.length + '件を更新しました');
+      alert(`${targets.length}件を更新しました`);
     } finally {
       setSaving(false);
     }
@@ -200,11 +200,11 @@ export default function ReceiptsList() {
       });
       if (redirectIfUnauthorized(res)) return;
       if (!res.ok) {
-        alert('一括削除に失敗しました\n' + (await apiErrorMessage(res, '')));
+        alert(`一括削除に失敗しました\n${await apiErrorMessage(res, '')}`);
         return;
       }
       await load();
-      alert(ids.length + '件を削除しました');
+      alert(`${ids.length}件を削除しました`);
     } finally {
       setSaving(false);
     }
@@ -277,7 +277,7 @@ export default function ReceiptsList() {
       URL.revokeObjectURL(url);
       setExportOpen(false);
     } catch (e) {
-      alert('エクスポートに失敗しました\n' + (e instanceof Error ? e.message : String(e)));
+      alert(`エクスポートに失敗しました\n${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setExporting(false);
     }

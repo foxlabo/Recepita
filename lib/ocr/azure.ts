@@ -99,7 +99,7 @@ const sumArray = (arr: Array<number | undefined>): number | undefined => {
 
 function normDate(s?: string): string | undefined {
   if (!s) return;
-  const m = s.match(/(20\d{2})[-\/\.](0?[1-9]|1[0-2])[-\/\.](0?[1-9]|[12]\d|3[01])/);
+  const m = s.match(/(20\d{2})[-/.](0?[1-9]|1[0-2])[-/.](0?[1-9]|[12]\d|3[01])/);
   if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
   return s;
 }
@@ -212,7 +212,7 @@ function parseInvoiceDoc(result: any): OcrResult {
   const sumItemTotals = sumArray(items.map((i) => i.total));
 
   let subtotal = subTotal;
-  let tax = totalTax;
+  const tax = totalTax;
   let grossAmount = invoiceTotal;
 
   if (grossAmount == null && isNum(subtotal) && isNum(tax)) {

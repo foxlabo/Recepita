@@ -98,7 +98,7 @@ export function expenseItemsText(e: {
   lineItems?: ReadonlyArray<{ name: string; amount: number }> | null;
   items?: unknown;
 }): string {
-  if (e.lineItems && e.lineItems.length) return formatItemsText(e.lineItems);
+  if (e.lineItems?.length) return formatItemsText(e.lineItems);
   return formatItemsText(itemsFromJson(e.items));
 }
 

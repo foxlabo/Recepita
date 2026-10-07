@@ -26,7 +26,7 @@ type ApiRes = {
 };
 
 function fmtYen(n: number) {
-  return '¥' + (n || 0).toLocaleString();
+  return `¥${(n || 0).toLocaleString()}`;
 }
 /** 前月比（%）。前月が 0 のときは比率を定義できないので null。 */
 function diffPct(cur: number, prev: number): number | null {
@@ -44,7 +44,7 @@ function LineChart({ months, a, b, height = 200 }: { months: string[]; a: number
 
   // --- y軸を 1/2/5 × 10^k の“きれいな値”に丸める
   const rawMax = Math.max(1, ...A, ...B);
-  const pow10 = Math.pow(10, Math.max(0, Math.floor(Math.log10(rawMax))));
+  const pow10 = 10 ** Math.max(0, Math.floor(Math.log10(rawMax)));
   const mant = rawMax / pow10;
   const niceMant = mant <= 1 ? 1 : mant <= 2 ? 2 : mant <= 5 ? 5 : 10;
   const maxY = niceMant * pow10;

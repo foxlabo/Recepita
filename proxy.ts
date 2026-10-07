@@ -24,7 +24,7 @@ const PUBLIC_APIS = [
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 function matches(pathname: string, list: string[]) {
-  return list.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  return list.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 function requestHost(req: NextRequest): string | null {

@@ -1,5 +1,6 @@
 'use client';
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import type React from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { callOcr, type OcrModel } from '@/lib/ocr/client';
@@ -98,7 +99,7 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
   const removeFile = (idx: number) => {
     try {
       const p = previews[idx];
-      if (p && p.url) URL.revokeObjectURL(p.url);
+      if (p?.url) URL.revokeObjectURL(p.url);
     } catch {}
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   };

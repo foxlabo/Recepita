@@ -20,7 +20,7 @@ export const POST = withAuth(async (req, { session }) => {
   const created = await prisma.$transaction(
     async (tx) => {
       const drafts = await tx.draftExpense.findMany({
-        where: { userId, ...(ids && ids.length ? { id: { in: ids } } : {}) },
+        where: { userId, ...(ids?.length ? { id: { in: ids } } : {}) },
         orderBy: { createdAt: 'asc' },
       });
       if (drafts.length === 0) throw new HttpError(400, '下書きがありません。');

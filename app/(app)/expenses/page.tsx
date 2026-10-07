@@ -297,7 +297,7 @@ export default function Expenses() {
       });
       if (redirectIfUnauthorized(res)) return;
       if (!res.ok) {
-        alert('登録に失敗しました\n' + (await apiErrorMessage(res, '')));
+        alert(`登録に失敗しました\n${await apiErrorMessage(res, '')}`);
       } else {
         const j = await res.json().catch(() => ({}));
         alert(`${j?.created ?? drafts.length}件を登録しました`);

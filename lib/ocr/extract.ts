@@ -61,12 +61,12 @@ export function toNum(v: any): number | undefined {
 
 export function extractDateFromText(text?: string): string | undefined {
   if (!text) return;
-  let m = text.match(/注文日[：:]?\s*(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/);
+  let m = text.match(/注文日[：:]?\s*(\d{4}[/-]\d{1,2}[/-]\d{1,2})/);
   if (m) return toDateStr(m[1]);
-  m = text.match(/(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/);
+  m = text.match(/(\d{4}[/-]\d{1,2}[/-]\d{1,2})/);
   if (m) return toDateStr(m[1]);
   m = text.match(/(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日/);
-  if (m) return `${m[1]}-${('0' + m[2]).slice(-2)}-${('0' + m[3]).slice(-2)}`;
+  if (m) return `${m[1]}-${(`0${m[2]}`).slice(-2)}-${(`0${m[3]}`).slice(-2)}`;
   return;
 }
 
@@ -128,7 +128,7 @@ export function pickSubtotalAndTaxFromText(text?: string): { subtotal?: number; 
 /** "invoice_p2.pdf" → "invoice.pdf" (pages produced by splitPdfToFiles). */
 export function baseKeyOf(name: string): string {
   const m = name.match(/^(.*)_p\d+\.pdf$/i);
-  if (m) return m[1] + '.pdf';
+  if (m) return `${m[1]}.pdf`;
   return name;
 }
 
@@ -171,7 +171,7 @@ export function mapPerPage(page: OcrPage): OcrDraftRow {
   const vendor = (typeof d.vendor === 'string' ? d.vendor : undefined) ?? p.vendor ?? '';
 
   // --- 品目系 ---
-  let firstItemAmt: number | undefined = undefined;
+  let firstItemAmt: number | undefined;
   if (Array.isArray(d.items) && d.items.length) {
     const it = d.items[0];
     firstItemAmt = toNum(it?.total ?? it?.amount ?? it?.price ?? it?.unitPrice);
@@ -208,7 +208,7 @@ export function mapPerPage(page: OcrPage): OcrDraftRow {
     textGross ??
     0;
 
-  let name: string | undefined = undefined;
+  let name: string | undefined;
   if (Array.isArray(d.items) && d.items.length) {
     const it = d.items[0];
     name = it?.name ?? it?.description ?? it?.item ?? undefined;
@@ -269,11 +269,11 @@ export function mapAggregate(pages: OcrPage[]): OcrDraftRow {
     textGross ??
     0;
 
-  let itemsText: string | undefined = undefined;
+  let itemsText: string | undefined;
   if (allItems.length) {
     const names = allItems.map((it: any) => it?.name ?? it?.description ?? it?.item).filter((x): x is string => !!x);
     const joined = names.join(', ');
-    itemsText = joined.length > 140 ? joined.slice(0, 140) + '…' : joined;
+    itemsText = joined.length > 140 ? `${joined.slice(0, 140)}…` : joined;
   }
 
   return {
