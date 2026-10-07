@@ -1,16 +1,18 @@
 # Recepita
 
+[![CI](https://github.com/foxlabo/Recepita/actions/workflows/ci.yml/badge.svg)](https://github.com/foxlabo/Recepita/actions/workflows/ci.yml)
+
 Recepita is a portfolio project for solo business owners and freelancers to manage expenses and sales in one place. It combines manual entry, receipt OCR, dashboard analytics, CSV export, and account/profile management in a Next.js application.
 
 ## Features
 
-- Expense registration and receipt list management
-- Sales and invoice registration
-- Dashboard with monthly summary, trends, and category breakdown
-- Receipt and invoice OCR with Azure Document Intelligence
-- Optional AI-based expense category suggestion with OpenAI
-- Email verification and account settings
-- CSV export of expenses
+- Expense registration: manual entry, or bulk import from receipt images/PDFs (OCR) and CSV into drafts, then confirm
+- Expense list with inline editing of amounts and line items, filtering and CSV export
+- Sales registration
+- Dashboard with monthly totals, month-over-month change, a 12-month trend and a category breakdown (all in JST)
+- Receipt OCR with Azure Document Intelligence, with optional AI category suggestion (OpenAI)
+- Sign-up with e-mail verification, e-mail / password change, sign-out of all devices, account deletion
+- Light / dark theme
 
 ## Tech Stack
 
@@ -114,14 +116,38 @@ Without Azure OCR settings, the app still runs, but the OCR endpoint returns a c
 
 Without an OpenAI API key, OCR still works, but AI-based category suggestion is skipped.
 
-## Suggested Portfolio Talking Points
+## Architecture
 
-- Full-stack CRUD application with authenticated user flows
-- External API integration for OCR and email delivery
-- Data modeling and migrations with Prisma
-- Dashboard design for operational visibility
-- Practical UX for freelancers managing receipts and invoices
+```
+app/            Next.js App Router pages and API route handlers
+  (app)/        signed-in screens (dashboard, expenses, receipts, invoices, settings)
+  api/          JSON APIs, all wrapped with withAuth() unless public
+lib/            shared server/client modules
+  auth-server.ts, session-token.ts   sessions (jose JWT + revocation)
+  http.ts       error -> HTTP status mapping (400 / 401 / 404 / 409 / 429)
+  rate-limit.ts DB-backed fixed-window rate limiter
+  dates.ts      JST date helpers (the app's date convention is documented here)
+  items.ts      expense line-item parsing
+  ocr/          Azure Document Intelligence client and result normalization
+  mail.ts       e-mail via Azure Communication Services
+proxy.ts        session check, 401 for APIs / redirect for pages, CSRF origin check
+prisma/         schema and migrations
+tests/          unit/, integration/ (PostgreSQL), e2e/ (Playwright + axe)
+```
 
-## Security Note
+## Security
 
-This public version excludes private environment files, generated assets, archives, and credential files. If you previously used real API keys or service-account credentials in local files, rotate them before publishing.
+- **Sessions**: HS256 JWTs (`jose`) in an HttpOnly, SameSite=Lax cookie. Each token carries the user's `sessionVersion`; changing the password or e-mail, deleting the account or "sign out of all devices" increments it, which revokes every existing session.
+- **Authorization**: every API handler resolves the user from the session and scopes all queries to that user.
+- **Verification tokens**: random 256-bit tokens, stored only as SHA-256 hashes, typed per purpose, single-use and expiring.
+- **Abuse protection**: rate limits on login, sign-up, e-mail resend, account changes and OCR; uniform responses so e-mail addresses can't be enumerated; constant-time-ish login for unknown users.
+- **Uploads**: OCR accepts images/PDF up to 10 MB; provider errors are never passed to the client.
+- **Web**: Origin check for state-changing API requests, open-redirect-safe `?next=`, security headers (nosniff, frame denial, referrer and permissions policy, HSTS in production), CSV formula-injection escaping.
+
+## Deployment
+
+A container setup for Azure (standalone Next.js output, non-root user, separate migration step) is in [`recepita_azure_container_deploy/`](recepita_azure_container_deploy/README_DEPLOY.md).
+
+## License
+
+Source code is published as a portfolio sample. No real credentials are included; never commit `.env` files.
