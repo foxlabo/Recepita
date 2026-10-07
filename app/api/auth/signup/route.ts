@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { showDevVerificationLink } from '@/lib/app-url';
 import { jsonError, readJson, withErrors } from '@/lib/http';
 import { hashPassword, newPasswordSchema } from '@/lib/password';
+import { clientIp, enforce, RATE_LIMITS } from '@/lib/rate-limit';
 import { findUserByEmail, tombstoneEmail } from '@/lib/users';
 import { emailSchema } from '@/lib/validation';
 import { sendAlreadyRegisteredNotice, sendSignupVerification } from '@/lib/verification';
@@ -29,6 +30,10 @@ function accepted(devLink?: string) {
 
 export const POST = withErrors(async (req) => {
   const { email, password } = await readJson(req, bodySchema);
+
+  // IP あたりの登録数と、同一アドレスへの確認メール送信数を制限
+  await enforce(RATE_LIMITS.signup, clientIp(req));
+  await enforce(RATE_LIMITS.verificationMailEmail, email);
 
   // 既存アドレスでも必ずハッシュ計算を行い、処理時間で登録有無が分からないようにする
   const passwordHash = await hashPassword(password);

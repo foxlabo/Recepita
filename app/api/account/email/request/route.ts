@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { jsonError, UnauthorizedError, withAuth } from '@/lib/auth-server';
 import { readJson } from '@/lib/http';
 import { passwordInputSchema, verifyPassword } from '@/lib/password';
+import { enforce, RATE_LIMITS } from '@/lib/rate-limit';
 import { findUserByEmail } from '@/lib/users';
 import { emailSchema, normalizeEmail } from '@/lib/validation';
 import { sendEmailChangeConfirmation } from '@/lib/verification';
@@ -19,6 +20,7 @@ const bodySchema = z.object({
 
 export const POST = withAuth(async (req, { session }) => {
   const { newEmail, currentPassword } = await readJson(req, bodySchema);
+  await enforce(RATE_LIMITS.accountPassword, session.userId);
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
@@ -36,6 +38,7 @@ export const POST = withAuth(async (req, { session }) => {
     return jsonError(409, 'このメールアドレスは使用できません。');
   }
 
+  await enforce(RATE_LIMITS.verificationMailEmail, newEmail);
   try {
     await sendEmailChangeConfirmation(user.id, newEmail);
   } catch (e) {

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { clearSessionCookie, jsonError, withAuth } from '@/lib/auth-server';
 import { readJson } from '@/lib/http';
 import { passwordInputSchema, verifyPassword } from '@/lib/password';
+import { enforce, RATE_LIMITS } from '@/lib/rate-limit';
 import { tombstoneEmail } from '@/lib/users';
 import { normalizeEmail } from '@/lib/validation';
 
@@ -19,6 +20,7 @@ const INVALID = 'メールアドレスまたはパスワードに誤りがあり
 
 export const POST = withAuth(async (req, { session }) => {
   const { email, password } = await readJson(req, bodySchema);
+  await enforce(RATE_LIMITS.accountPassword, session.userId);
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },

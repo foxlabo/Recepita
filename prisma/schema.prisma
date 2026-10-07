@@ -145,3 +145,13 @@ model UserProfile {
 }
 
 
+
+/// Fixed-window rate-limit counters used by lib/rate-limit.ts.
+/// `key` is "<rule>:<sha256(identifier)>" so no raw IPs/e-mails are stored.
+model RateLimit {
+  key         String   @id
+  windowStart DateTime
+  count       Int
+
+  @@index([windowStart])
+}

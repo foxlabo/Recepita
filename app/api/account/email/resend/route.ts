@@ -5,6 +5,7 @@ import { after, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { showDevVerificationLink } from '@/lib/app-url';
 import { readJson, withErrors } from '@/lib/http';
+import { clientIp, enforce, RATE_LIMITS } from '@/lib/rate-limit';
 import { findUserByEmail } from '@/lib/users';
 import { emailSchema } from '@/lib/validation';
 import { sendSignupVerification } from '@/lib/verification';
@@ -21,6 +22,10 @@ async function resend(email: string): Promise<string | undefined> {
 
 export const POST = withErrors(async (req) => {
   const { email } = await readJson(req, bodySchema);
+
+  // IP あたり・アドレスあたりの送信回数を制限（アドレスの有無に関係なく数える）
+  await enforce(RATE_LIMITS.verificationMailIp, clientIp(req));
+  await enforce(RATE_LIMITS.verificationMailEmail, email);
 
   if (showDevVerificationLink()) {
     // ローカル開発専用: リンクをレスポンスに含める

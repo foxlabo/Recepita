@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { startSession } from '@/lib/auth-server';
 import { jsonError, readJson, withErrors } from '@/lib/http';
 import { hashPassword, needsRehash, passwordInputSchema, verifyPassword } from '@/lib/password';
+import { clientIp, enforce, RATE_LIMITS, reset } from '@/lib/rate-limit';
 import { findUserByEmail } from '@/lib/users';
 import { emailSchema } from '@/lib/validation';
 
@@ -20,6 +21,10 @@ const INVALID_CREDENTIALS = 'メールアドレスまたはパスワードが違
 
 export const POST = withErrors(async (req) => {
   const { email, password } = await readJson(req, bodySchema);
+
+  // 同一 IP + メールアドレスあたりの試行回数を制限（成功時にリセット）
+  const limiterId = `${clientIp(req)}|${email}`;
+  await enforce(RATE_LIMITS.login, limiterId);
 
   const user = await findUserByEmail(email);
   // ユーザーがいない場合もダミーハッシュと比較して処理時間を揃える
@@ -38,6 +43,7 @@ export const POST = withErrors(async (req) => {
     }
   }
 
+  await reset(RATE_LIMITS.login, limiterId).catch(() => {});
   await startSession(user); // JWT に sessionVersion (sv) を含めて Cookie に保存
   return NextResponse.json({ ok: true });
 });

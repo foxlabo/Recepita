@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { jsonError, startSession, UnauthorizedError, withAuth } from '@/lib/auth-server';
 import { readJson } from '@/lib/http';
+import { enforce, RATE_LIMITS } from '@/lib/rate-limit';
 import { hashPassword, newPasswordSchema, passwordInputSchema, verifyPassword } from '@/lib/password';
 
 export const runtime = 'nodejs';
@@ -15,6 +16,7 @@ const bodySchema = z.object({
 
 export const POST = withAuth(async (req, { session }) => {
   const { current, next } = await readJson(req, bodySchema);
+  await enforce(RATE_LIMITS.accountPassword, session.userId);
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
