@@ -86,3 +86,12 @@ export function withErrors<P extends Record<string, string | string[]> = {}>(
     }
   };
 }
+
+/**
+ * Redirect with a relative Location header, so the target never depends on
+ * the request's Host header (or a misconfigured proxy origin).
+ */
+export function relativeRedirect(location: string, status: 303 | 307 = 303): NextResponse {
+  if (!location.startsWith('/') || location.startsWith('//')) throw new Error('relativeRedirect: path expected');
+  return new NextResponse(null, { status, headers: { Location: location, 'Cache-Control': 'no-store' } });
+}

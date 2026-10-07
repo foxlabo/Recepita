@@ -43,7 +43,7 @@ export default function Signup() {
   async function resend() {
     setLoading(true);
     try {
-      const r = await fetch('/api/account/email/register', {
+      const r = await fetch('/api/account/email/resend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

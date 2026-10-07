@@ -1,67 +1,46 @@
 // app/api/account/email/request/route.ts
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { jsonError, UnauthorizedError, withAuth } from "@/lib/auth-server";
-import bcrypt from "bcryptjs";
-import { EmailClient } from "@azure/communication-email";
-import crypto from "crypto";
+// メールアドレス変更の申請（ログイン必須）。新アドレス宛に確認リンクを送る。
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import { jsonError, UnauthorizedError, withAuth } from '@/lib/auth-server';
+import { readJson } from '@/lib/http';
+import { passwordInputSchema, verifyPassword } from '@/lib/password';
+import { findUserByEmail } from '@/lib/users';
+import { emailSchema, normalizeEmail } from '@/lib/validation';
+import { sendEmailChangeConfirmation } from '@/lib/verification';
 
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
+
+const bodySchema = z.object({
+  newEmail: emailSchema,
+  currentPassword: passwordInputSchema,
+});
 
 export const POST = withAuth(async (req, { session }) => {
-  // 入力（フロントの実装に合わせる）
-  const { newEmail, currentPassword } = await req.json().catch(() => ({}));
-  if (!newEmail || !currentPassword) {
-    return jsonError(400, "bad request");
-  }
+  const { newEmail, currentPassword } = await readJson(req, bodySchema);
 
-  // 現在ユーザー取得 & パスワード検証
-  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, email: true, password: true },
+  });
   if (!user) throw new UnauthorizedError();
 
-  const ok = await bcrypt.compare(currentPassword, user.password);
-  if (!ok) return jsonError(400, "password invalid");
-
-  // newEmail の重複／同一チェック
-  if (newEmail === user.email) {
-    return jsonError(400, "same email");
+  if (!(await verifyPassword(currentPassword, user.password))) {
+    return jsonError(400, '現在のパスワードが正しくありません。');
   }
-  const exists = await prisma.user.findUnique({ where: { email: newEmail } });
-  if (exists) return jsonError(409, "email exists");
-
-  // 古い検証トークン掃除（このユーザー分）
-  await prisma.verificationToken.deleteMany({ where: { userId: user.id } });
-
-  // トークン発行（30分）
-  const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
-  await prisma.verificationToken.create({
-    data: { token, email: newEmail, userId: user.id, expiresAt },
-  });
-
-  // 確認メール送信（ACS）
-  const baseUrl = process.env.NEXTAUTH_URL || new URL(req.url).origin;
-  const verifyUrl = `${baseUrl}/api/account/email/confirm?token=${encodeURIComponent(token)}`;
-
-  const conn = process.env.AZURE_COMMUNICATION_CONNECTION_STRING;
-  const sender = process.env.AZURE_COMMUNICATION_SENDER;
-  if (!conn || !sender) {
-    return jsonError(500, "送信に失敗しました");
+  if (newEmail === normalizeEmail(user.email)) {
+    return jsonError(400, '現在と同じメールアドレスです。');
+  }
+  if (await findUserByEmail(newEmail)) {
+    return jsonError(409, 'このメールアドレスは使用できません。');
   }
 
-  const client = new EmailClient(conn);
-  const poller = await client.beginSend({
-    senderAddress: sender,
-    content: {
-      subject: "Recepita メール認証",
-      html: `<p>以下のリンクをクリックしてメールアドレスを確認してください（30分有効）:</p>
-             <p><a href="${verifyUrl}">${verifyUrl}</a></p>`,
-    },
-    recipients: { to: [{ address: newEmail }] },
-  });
-  const res = await poller.pollUntilDone();
-  if (res.status !== "Succeeded") {
-    throw new Error(`ACS status: ${res.status}`);
+  try {
+    await sendEmailChangeConfirmation(user.id, newEmail);
+  } catch (e) {
+    console.error('[email change] mail failed:', e instanceof Error ? e.message : e);
+    return jsonError(503, '確認メールの送信に失敗しました。時間をおいて再度お試しください。');
   }
 
   return NextResponse.json({ ok: true });

@@ -1,36 +1,33 @@
 // app/api/account/email/confirm/route.ts
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { clearedSessionCookie } from "@/lib/auth-server";
+// メールアドレス変更の確定: GET /api/account/email/confirm?token=xxxx
+import type { NextRequest } from 'next/server';
+import { clearedSessionCookie } from '@/lib/auth-server';
+import { relativeRedirect } from '@/lib/http';
+import { consumeToken, TokenRejected } from '@/lib/verification';
 
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const base = process.env.NEXTAUTH_URL || url.origin;
-  const token = url.searchParams.get("token");
+export async function GET(req: NextRequest) {
+  try {
+    const result = await consumeToken(req.nextUrl.searchParams.get('token'), 'EMAIL_CHANGE', async (tx, vt) => {
+      // メール更新＋認証済みに。sessionVersion を上げて全端末のセッションを失効。
+      // 新アドレスが既に使われていれば一意制約違反 → 'taken'
+      const { count } = await tx.user.updateMany({
+        where: { id: vt.userId, isDeleted: false },
+        data: { email: vt.email, isEmailVerified: true, sessionVersion: { increment: 1 } },
+      });
+      if (count !== 1) throw new TokenRejected('invalid');
+    });
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login?email_changed=0&reason=notoken", base));
+    if (!result.ok) return relativeRedirect(`/login?email_changed=0&reason=${result.reason}`);
+
+    // このブラウザの Cookie も消してログイン画面へ
+    const res = relativeRedirect('/login?email_changed=1');
+    res.cookies.set(clearedSessionCookie());
+    return res;
+  } catch (e) {
+    console.error('[email confirm] failed:', e instanceof Error ? e.message : e);
+    return relativeRedirect('/login?email_changed=0&reason=error');
   }
-
-  const vt = await prisma.verificationToken.findUnique({ where: { token } });
-  if (!vt || vt.expiresAt < new Date()) {
-    if (vt) await prisma.verificationToken.delete({ where: { token } }).catch(() => {});
-    return NextResponse.redirect(new URL("/login?email_changed=0&reason=expired", base));
-  }
-
-  // メール更新＋認証フラグON。sessionVersion を上げて全端末のセッションを失効
-  await prisma.user.update({
-    where: { id: vt.userId },
-    data: { email: vt.email, isEmailVerified: true, sessionVersion: { increment: 1 } },
-  });
-
-  // トークンは使い切り
-  await prisma.verificationToken.delete({ where: { token } }).catch(() => {});
-
-  // Cookie を消して /login へリダイレクト
-  const res = NextResponse.redirect(new URL("/login?email_changed=1", base));
-  res.cookies.set(clearedSessionCookie());
-  return res;
 }

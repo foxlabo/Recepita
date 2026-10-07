@@ -18,7 +18,7 @@ const PUBLIC_APIS = [
   '/api/ping',
   '/api/account/email/verify', // メール内リンク（新規登録の認証）
   '/api/account/email/confirm', // メール内リンク（メールアドレス変更の確定）
-  '/api/account/email/register', // 確認メール再送
+  '/api/account/email/resend', // 確認メール再送
 ];
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
