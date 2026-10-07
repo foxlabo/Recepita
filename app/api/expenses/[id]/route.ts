@@ -11,7 +11,7 @@ export async function GET(_: Request, props: { params: Promise<{ id: string }> }
   const e = await prisma.expense.findFirst({
     where: { id: params.id, userId: s.userId },
     // items はスカラなので include しない。必要なら select で拾う。
-    include: { lineItems: true, files: true },
+    include: { lineItems: true },
   });
 
   if (!e) return NextResponse.json({ ok: false, message: 'not found' }, { status: 404 });

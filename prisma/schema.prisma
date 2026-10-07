@@ -48,7 +48,6 @@ model Expense {
   updatedAt     DateTime @updatedAt
 
   lineItems ExpenseItem[]
-  files     ReceiptFile[]
 
   @@index([userId, date])
 }
@@ -68,20 +67,6 @@ model ExpenseItem {
   @@index([expenseId])
 }
 
-model ReceiptFile {
-  id        String   @id @default(uuid())
-  storage   String
-  path      String
-  original  String
-  mime      String?
-  size      Int?
-  createdAt DateTime @default(now())
-
-  expense   Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
-  expenseId String?
-
-  @@index([expenseId])
-}
 
 model DraftExpense {
   id             String   @id @default(cuid())
