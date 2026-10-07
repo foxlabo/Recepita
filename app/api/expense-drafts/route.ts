@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/auth-server';
 import { readJson } from '@/lib/http';
 import { draftInputSchema, toDraftData } from '@/lib/drafts';
 import { idListSchema } from '@/lib/validation';
+import { formatDateJST } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,8 +18,8 @@ export const GET = withAuth(async (_req, { session }) => {
   });
   const items = rows.map((r) => ({
     id: r.id,
-    registeredDate: r.registeredDate.toISOString().slice(0, 10),
-    tradeDate: r.tradeDate.toISOString().slice(0, 10),
+    registeredDate: formatDateJST(r.registeredDate),
+    tradeDate: formatDateJST(r.tradeDate),
     amount: r.amount,
     vendor: r.vendor,
     category: r.category ?? '',

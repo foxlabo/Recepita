@@ -4,11 +4,12 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { csvRow } from '@/lib/csv';
+import { addMonths, formatDateJST, yearMonthJST } from '@/lib/dates';
 
 type Row = {
   id: string;
-  createdAt: string;
-  date: string;      // 取引日
+  createdAt: string; // 登録日時（ISO）
+  date: string;      // 取引日（JST の YYYY-MM-DD）
   amount: number;
   vendor: string;
   category?: string|null;
@@ -23,10 +24,6 @@ type ListRes = {
   pageSize: number;
 };
 
-function fmtDate(s: string) {
-  const m = String(s).match(/^(\d{4}-\d{2}-\d{2})/);
-  return m ? m[1] : s;
-}
 
 // ===== ページング補助 =====
 const MAX_VISIBLE = 7; // 同時表示するページ番号の最大個数（必要に応じて 5〜9 程度に変更可）
@@ -39,9 +36,9 @@ function pageRange(current: number, total: number, maxVisible = MAX_VISIBLE){
 }
 
 export default function ReceiptsList() {
-  const today = new Date();
-  const [year, setYear] = useState<number>(today.getFullYear());
-  const [month, setMonth] = useState<number>(today.getMonth() + 1);
+  const today = yearMonthJST();
+  const [year, setYear] = useState<number>(today.year);
+  const [month, setMonth] = useState<number>(today.month);
   const [page, setPage] = useState<number>(1);
   const pageSize = 50;
 
@@ -145,13 +142,9 @@ export default function ReceiptsList() {
   }
 
   // ===== エクスポート（期間選択 → CSV） =====
-  function ymToDate(y:number,m:number){ return new Date(y, m-1, 1); }
   function* monthRange(y1:number,m1:number,y2:number,m2:number){
-    let d = ymToDate(y1,m1);
-    const end = ymToDate(y2,m2);
-    while (d <= end) {
-      yield { y: d.getFullYear(), m: d.getMonth()+1 };
-      d = new Date(d.getFullYear(), d.getMonth()+1, 1);
+    for (let ym = { year: y1, month: m1 }; ym.year * 12 + ym.month <= y2 * 12 + m2; ym = addMonths(ym.year, ym.month, 1)) {
+      yield { y: ym.year, m: ym.month };
     }
   }
   function toCsv(list: Row[]): string {
@@ -160,8 +153,8 @@ export default function ReceiptsList() {
     list.forEach(r => {
       // csvRow は = + - @ で始まるセルを無害化する（CSVインジェクション対策）
       lines.push(csvRow([
-        fmtDate(r.createdAt),
-        fmtDate(r.date),
+        formatDateJST(r.createdAt),
+        formatDateJST(r.date),
         r.amount,
         r.vendor ?? '',
         r.category ?? '',
@@ -210,7 +203,7 @@ export default function ReceiptsList() {
 
   // 年/月の選択肢
   const yearOptions = useMemo(() => {
-    const y = today.getFullYear();
+    const y = today.year;
     return Array.from({length: 8}).map((_,i)=> y - i); // 直近8年
   }, []);
   const monthOptions = [1,2,3,4,5,6,7,8,9,10,11,12];
@@ -319,13 +312,13 @@ export default function ReceiptsList() {
                         </div>
                       </td>
                       <td className="p-2 align-top">
-                        <Input readOnly className="min-w-[150px] text-center" value={fmtDate(r.createdAt)} />
+                        <Input readOnly className="min-w-[150px] text-center" value={formatDateJST(r.createdAt)} />
                       </td>
                       <td className="p-2 align-top">
                         <Input
                           type="date"
                           className="min-w-[150px]"
-                          value={fmtDate((e.date as any) ?? r.date)}
+                          value={formatDateJST(e.date ?? r.date)}
                           onChange={ev => setEdit(r.id, { date: ev.target.value })}
                         />
                       </td>

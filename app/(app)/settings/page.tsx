@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
+import { formatDateJST } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,8 +49,7 @@ export default function Settings() {
       try {
         const res = await fetch('/api/settings/profile', { cache: 'no-store' });
         const p = await res.json();
-        const toDateInput = (d?: string) =>
-          d ? new Date(d).toISOString().slice(0, 10) : '';
+        const toDateInput = (d?: string) => formatDateJST(d);
         setProfile({
           ...p,
           birthDate: p?.birthDate ? toDateInput(p.birthDate) : '',

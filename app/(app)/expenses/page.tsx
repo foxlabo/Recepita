@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { formatDateJST, normalizeDateString, todayJST } from '@/lib/dates';
 
 // ===== OCR endpoint (個別用) =====
 const OCR_ENDPOINT = '/api/ocr';
@@ -48,16 +49,6 @@ function itemsToText(items?: Array<{ name?: string; price?: number; total?: numb
     })
     .filter(Boolean)
     .join(', ');
-}
-function fmtDate(s: any) {
-  const str = typeof s === 'string' ? s : (s?.toString?.() || '');
-  const m = String(str).match(/^(\d{4}-\d{2}-\d{2})/);
-  return m ? m[1] : str;
-}
-function toDateStr(v: any): string | undefined {
-  if (!v) return;
-  if (typeof v === 'string') return v.slice(0,10);
-  try { return new Date(v).toISOString().slice(0,10); } catch { return; }
 }
 function toNum(v: any): number | undefined {
   if (v == null) return;
@@ -108,7 +99,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
 
   // フォーム（取引日）
   const [form, setForm] = useState({
-    tradeDate: new Date().toISOString().slice(0, 10),
+    tradeDate: todayJST(),
     amount: '',
     vendor: '',
     category: '',
@@ -140,10 +131,10 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
       const raw = await callOcrSingle(file);
       const p = normalize(raw) as OcrResponse;
       const d = p?.detected || {};
-      const regDate = new Date().toISOString().slice(0,10);
+      const regDate = todayJST();
 
       // 取引日
-      const tradeDate = toDateStr(d.date) || regDate;
+      const tradeDate = normalizeDateString(d.date) || regDate;
 
       // 金額（total > subtotal+tax > amount）
       const subtotal = toNum(d.subtotal);
@@ -195,10 +186,10 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
     if (!form.tradeDate || !form.amount || !form.vendor) {
       return alert('取引日/金額/取引先は必須です');
     }
-    const reg = new Date().toISOString().slice(0,10);
+    const reg = todayJST();
     const row: PreviewRow = {
-      registeredDate: fmtDate(reg),
-      tradeDate: fmtDate(form.tradeDate),
+      registeredDate: reg,
+      tradeDate: formatDateJST(form.tradeDate),
       amount: Number(form.amount),
       vendor: form.vendor,
       category: form.category ?? '',
@@ -207,7 +198,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
     };
     onAppend(row);
     setForm({
-      tradeDate: new Date().toISOString().slice(0, 10),
+      tradeDate: todayJST(),
       amount: '',
       vendor: '',
       category: '',

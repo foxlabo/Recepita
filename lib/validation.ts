@@ -1,5 +1,6 @@
 // lib/validation.ts
 import { z } from 'zod';
+import { parseDateInput, parseDateOnly } from '@/lib/dates';
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -23,11 +24,40 @@ export const idListSchema = z
   .min(1, '対象が選択されていません。')
   .max(1000, '一度に処理できる件数を超えています。');
 
-/** 'YYYY-MM-DD' / ISO string / epoch millis → valid Date. */
+/**
+ * Calendar date ('YYYY-MM-DD', also 2026/9/30 etc.) → 00:00 UTC of that date;
+ * ISO date-time / epoch millis → that instant. See lib/dates.ts.
+ */
 export const dateInputSchema = z
   .union([z.string().max(64), z.number()], { error: '日付が正しくありません。' })
-  .transform((v) => new Date(v))
-  .refine((d) => !Number.isNaN(d.getTime()), '日付が正しくありません。');
+  .transform((v, ctx) => {
+    const d = parseDateInput(v);
+    if (!d) {
+      ctx.addIssue({ code: 'custom', message: '日付が正しくありません。' });
+      return z.NEVER;
+    }
+    return d;
+  });
+
+/**
+ * Required calendar date ('YYYY-MM-DD'; 2026/9/30 and 2026年9月30日 are
+ * normalised) → Date at 00:00 UTC of that date. `label` names the field in
+ * the Japanese error messages.
+ */
+export const dateOnlySchema = (label = '日付') =>
+  z
+    .string({ error: `${label}を入力してください。` })
+    .trim()
+    .min(1, `${label}を入力してください。`)
+    .max(64, `${label}が正しくありません。`)
+    .transform((v, ctx) => {
+      const d = parseDateOnly(v);
+      if (!d) {
+        ctx.addIssue({ code: 'custom', message: `${label}はYYYY-MM-DD形式の正しい日付で入力してください。` });
+        return z.NEVER;
+      }
+      return d;
+    });
 
 /** Integer that fits a PostgreSQL INTEGER column. */
 export const int32Schema = z

@@ -5,13 +5,13 @@ import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth-server';
 import { readJson } from '@/lib/http';
 import { optionalText } from '@/lib/validation';
+import { parseDateOnly } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 
+/** 'YYYY-MM-DD' → 00:00 UTC of that date（lib/dates.ts の規約）。空/不正は null。 */
 function toDateOrNull(v: string | null | undefined): Date | null {
-  if (!v) return null;
-  const d = new Date(v);
-  return isNaN(d.getTime()) ? null : d;
+  return v ? parseDateOnly(v) : null;
 }
 
 const text = optionalText(200);

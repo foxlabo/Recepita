@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { formatDateJST, todayJST } from '@/lib/dates';
 
 type Invoice = {
   id: string;
@@ -18,7 +19,7 @@ export default function Invoices() {
   const [form, setForm] = useState({
     client: '',
     amount: '',
-    issueDate: new Date().toISOString().slice(0, 10),
+    issueDate: todayJST(),
   });
 
   async function load() {
@@ -49,7 +50,7 @@ export default function Invoices() {
     setForm({
       client: '',
       amount: '',
-      issueDate: new Date().toISOString().slice(0, 10),
+      issueDate: todayJST(),
     });
     load();
   }
@@ -128,13 +129,7 @@ export default function Invoices() {
                     <td className="p-2">{x.client}</td>
                     <td className="p-2">¥{x.amount.toLocaleString()}</td>
                     <td className="p-2">
-                      {new Date(x.issueDate)
-                        .toLocaleDateString('ja-JP', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                        })
-                        .replace(/-/g, '/')}
+                      {formatDateJST(x.issueDate).replace(/-/g, '/')}
                     </td>
                     <td className="p-2">{x.status}</td>
                     <td className="p-2 text-right">

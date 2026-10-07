@@ -9,6 +9,7 @@ import React, {
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { normalizeDateString, todayJST } from '@/lib/dates';
 
 function parseCsv(text: string): Record<string, string>[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
@@ -116,7 +117,7 @@ function coerceDraftFromCsv(rec: Record<string, string>) {
     return '';
   };
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayJST();
 
   const registeredDate = find(['登録日', 'registeredDate']) || today;
 
@@ -250,15 +251,8 @@ function normalize(raw: any): any {
   }
   return c;
 }
-function toDateStr(v: any): string | undefined {
-  if (!v) return;
-  if (typeof v === 'string') return v.slice(0, 10);
-  try {
-    return new Date(v).toISOString().slice(0, 10);
-  } catch {
-    return;
-  }
-}
+/** OCR / テキストの日付 → 'YYYY-MM-DD'（解釈できなければ undefined） */
+const toDateStr = (v: unknown): string | undefined => normalizeDateString(v);
 function toNum(v: any): number | undefined {
   if (v == null) return;
   const n = Number(String(v).replace(/[,￥¥円\s]/g, ''));
@@ -349,7 +343,7 @@ function baseKeyOf(name: string): string {
  *  - それでもダメなら明細やテキスト
  */
 function mapPerPage(page: OcrPage): PreviewRow {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayJST();
   const p = page.raw;
   const d = page.detected ?? {};
   const ai = page.ai ?? {};
@@ -428,7 +422,7 @@ function mapPerPage(page: OcrPage): PreviewRow {
  * 1ファイル=1行モード用：複数ページをまとめて税込金額を推定
  */
 function mapAggregate(groupKey: string, pages: OcrPage[]): PreviewRow {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayJST();
   const texts = pages.map((p) => p.text).join('\n');
 
   const dates = pages
@@ -663,7 +657,7 @@ export default function BulkRegisterPage({
     if (!file) return;
     const text = await file.text();
     const records = parseCsv(text);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayJST();
     records.forEach((r) => {
       const d = coerceDraftFromCsv(r);
       if (!d.registeredDate) d.registeredDate = today;
@@ -740,7 +734,7 @@ export default function BulkRegisterPage({
       }
 
       try {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todayJST();
         out.forEach((r) =>
           onAppendDraft({
             registeredDate: today,
