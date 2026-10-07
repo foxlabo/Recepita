@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
+import { apiErrorMessage, redirectIfUnauthorized } from '@/lib/api-client';
 import { formatDateJST } from '@/lib/dates';
-
-export const dynamic = 'force-dynamic';
 
 type Profile = {
   lastName?: string | null;
@@ -48,6 +47,11 @@ export default function Settings() {
     (async () => {
       try {
         const res = await fetch('/api/settings/profile', { cache: 'no-store' });
+        if (redirectIfUnauthorized(res)) return;
+        if (!res.ok) {
+          alert(await apiErrorMessage(res, 'プロフィールの取得に失敗しました。'));
+          return;
+        }
         const p = await res.json();
         const toDateInput = (d?: string) => formatDateJST(d);
         setProfile({
@@ -120,9 +124,9 @@ export default function Settings() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(pw),
                         });
-                        const data = await res.json().catch(() => ({}));
+                        if (redirectIfUnauthorized(res)) return;
                         if (!res.ok) {
-                          alert(data?.error || 'パスワードの更新に失敗しました。');
+                          alert(await apiErrorMessage(res, 'パスワードの更新に失敗しました。'));
                           return;
                         }
                         setPw({ current: '', next: '' });
@@ -189,16 +193,23 @@ export default function Settings() {
                             currentPassword: pw.current,
                           }),
                         });
-                        if (!res.ok) throw new Error(await res.text());
+                        if (!res.ok) {
+                          setEmailReqState('error');
+                          alert(
+                            await apiErrorMessage(
+                              res,
+                              '送信に失敗しました。メールアドレスの重複やパスワードをご確認ください。',
+                            ),
+                          );
+                          return;
+                        }
                         setEmailReqState('sent');
                         alert(
                           '確認メールを送信しました。新しいメールアドレスの受信箱をご確認ください。',
                         );
-                      } catch (e) {
+                      } catch {
                         setEmailReqState('error');
-                        alert(
-                          '送信に失敗しました。メールアドレスの重複やパスワードをご確認ください。',
-                        );
+                        alert('通信に失敗しました。時間をおいてお試しください。');
                       } finally {
                         setEmailReqState('idle');
                       }
@@ -292,12 +303,21 @@ export default function Settings() {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                await fetch('/api/settings/profile', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(profile),
-                });
-                alert('保存しました');
+                try {
+                  const res = await fetch('/api/settings/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(profile),
+                  });
+                  if (redirectIfUnauthorized(res)) return;
+                  if (!res.ok) {
+                    alert(await apiErrorMessage(res, '保存に失敗しました。'));
+                    return;
+                  }
+                  alert('保存しました');
+                } catch {
+                  alert('通信に失敗しました。時間をおいてお試しください。');
+                }
               }}
               className="grid gap-3 max-w-3xl"
             >
