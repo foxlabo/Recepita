@@ -301,8 +301,11 @@ export default function ReceiptsList() {
         <CardContent>
           <div className="flex flex-wrap items-center gap-3">
             <div>
-              <span className="text-sm mr-2 text-(--muted)">年</span>
+              <span className="text-sm mr-2 text-(--muted)" aria-hidden="true">
+                年
+              </span>
               <select
+                aria-label="年"
                 className={selectClass}
                 value={year}
                 onChange={(e) => {
@@ -318,8 +321,11 @@ export default function ReceiptsList() {
               </select>
             </div>
             <div>
-              <span className="text-sm mr-2 text-(--muted)">月</span>
+              <span className="text-sm mr-2 text-(--muted)" aria-hidden="true">
+                月
+              </span>
               <select
+                aria-label="月"
                 className={selectClass}
                 value={month}
                 onChange={(e) => {
@@ -357,6 +363,7 @@ export default function ReceiptsList() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-(--muted)">開始</span>
                   <select
+                    aria-label="開始年"
                     className={selectClass}
                     value={fromYear}
                     onChange={(e) => setFromYear(Number(e.target.value))}
@@ -369,6 +376,7 @@ export default function ReceiptsList() {
                   </select>
                   <span>年</span>
                   <select
+                    aria-label="開始月"
                     className={selectClass}
                     value={fromMonth}
                     onChange={(e) => setFromMonth(Number(e.target.value))}
@@ -383,7 +391,12 @@ export default function ReceiptsList() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-(--muted)">終了</span>
-                  <select className={selectClass} value={toYear} onChange={(e) => setToYear(Number(e.target.value))}>
+                  <select
+                    aria-label="終了年"
+                    className={selectClass}
+                    value={toYear}
+                    onChange={(e) => setToYear(Number(e.target.value))}
+                  >
                     {yearOptions.map((y) => (
                       <option key={y} value={y}>
                         {y}
@@ -391,7 +404,12 @@ export default function ReceiptsList() {
                     ))}
                   </select>
                   <span>年</span>
-                  <select className={selectClass} value={toMonth} onChange={(e) => setToMonth(Number(e.target.value))}>
+                  <select
+                    aria-label="終了月"
+                    className={selectClass}
+                    value={toMonth}
+                    onChange={(e) => setToMonth(Number(e.target.value))}
+                  >
                     {monthOptions.map((m) => (
                       <option key={m} value={m}>
                         {m}

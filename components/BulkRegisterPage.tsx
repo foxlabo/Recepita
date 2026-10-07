@@ -148,8 +148,9 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
             <input ref={inputRef} type="file" multiple onChange={onPick} />
 
             <div className="flex items-center gap-2">
-              <span>形式</span>
+              <span aria-hidden="true">形式</span>
               <select
+                aria-label="形式"
                 className="border rounded-sm px-2 py-1 bg-(--card)"
                 value={model}
                 onChange={(e) => setModel(e.target.value as OcrModel)}
@@ -161,8 +162,9 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              <span>モード</span>
+              <span aria-hidden="true">モード</span>
               <select
+                aria-label="モード"
                 className="border rounded-sm px-2 py-1 bg-(--card)"
                 value={mode}
                 onChange={(e) => setMode(e.target.value as Mode)}

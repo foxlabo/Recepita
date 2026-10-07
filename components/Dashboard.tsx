@@ -240,6 +240,7 @@ export default function Dashboard() {
         <h2 className="text-xl font-semibold">ダッシュボード</h2>
         <div className="ml-auto flex items-center gap-2">
           <select
+            aria-label="表示する年"
             className="border rounded-sm px-2 py-1"
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
@@ -253,6 +254,7 @@ export default function Dashboard() {
               ))}
           </select>
           <select
+            aria-label="表示する月"
             className="border rounded-sm px-2 py-1"
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
