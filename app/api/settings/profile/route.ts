@@ -11,7 +11,7 @@ function toDateOrNull(v: any): Date | null {
 
 // GET: プロフィール取得
 export async function GET(_req: Request) {
-  const { userId } = getSessionOrThrow();           // ← 引数なし
+  const { userId } = await getSessionOrThrow();           // ← 引数なし
   const profile = await prisma.userProfile.findUnique({
     where: { userId },
   });
@@ -21,7 +21,7 @@ export async function GET(_req: Request) {
 
 // PUT: プロフィール更新（なければ作成）
 export async function PUT(req: Request) {
-  const { userId } = getSessionOrThrow();           // ← 引数なし
+  const { userId } = await getSessionOrThrow();           // ← 引数なし
   const body = await req.json();
 
   const data = {

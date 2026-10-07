@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth-server";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok:false, message:'unauthorized' }, { status: 401 });
   try {
     const { ids } = (await req.json()) as { ids: string[] };

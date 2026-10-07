@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     // ログイン必須
-    const session = getSessionOrThrow();
+    const session = await getSessionOrThrow();
 
     const { email, password } = await req.json();
 
@@ -51,7 +51,7 @@ if (!user || user.email !== email || isDeleted) {
     });
 
     // ★ セッション Cookie を削除（ログアウト）
-    clearSessionCookie();
+    await clearSessionCookie();
 
     return NextResponse.json({ ok: true });
   } catch (e) {

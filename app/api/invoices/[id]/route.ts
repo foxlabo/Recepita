@@ -4,11 +4,12 @@ import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth-server'
 
 export const runtime = 'nodejs'
-type Ctx = { params: { id: string } }
+type Ctx = { params: Promise<{ id: string }> }
 
 // ★ これだけでOK（GET/POSTは消す）
-export async function DELETE(_req: Request, { params }: Ctx) {
-  const s = getSession()
+export async function DELETE(_req: Request, props: Ctx) {
+  const params = await props.params;
+  const s = await getSession()
   if (!s) return NextResponse.json({ error: 'auth' }, { status: 401 })
 
   // 子テーブルがあれば先に削除（なければ不要）

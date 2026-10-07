@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth-server';
 
 // GET one
-export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const s = getSession();
+export async function GET(_: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 });
 
   const e = await prisma.expense.findFirst({
@@ -18,8 +19,9 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 }
 
 // PUT update
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const s = getSession();
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 });
 
   const body = await request.json();

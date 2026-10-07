@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   }
 
   const token = signSession({ userId: user.id, email: user.email });
-  setSessionCookie(token); // cookies() 経由で Set-Cookie される
+  await setSessionCookie(token); // cookies() 経由で Set-Cookie される
 
   return NextResponse.json({ ok: true });
 }

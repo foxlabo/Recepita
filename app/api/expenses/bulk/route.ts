@@ -34,7 +34,7 @@ function parseItemsText(s?: string) {
 
 // ---- メイン処理 ----
 export async function POST(request: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s)
     return NextResponse.json(
       { ok: false, message: 'unauthorized' },

@@ -1,8 +1,6 @@
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { getSession } from '@/lib/auth-server'
-
-const UserMenu = dynamic(() => import('@/components/UserMenu'), { ssr: false })
+import UserMenu from '@/components/UserMenu'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()

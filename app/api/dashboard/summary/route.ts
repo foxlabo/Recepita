@@ -17,7 +17,7 @@ function toYMD(input: Date | string): string {
 
 export async function GET(req: Request) {
   // ▼ 認証（userId 取得）
-  const s = getSession()
+  const s = await getSession()
   if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 })
   const userFilter = { userId: s.userId }
 

@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     // 1) セッション（現在のログインユーザー）
-    const session = getSession();
+    const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // 2) 入力（フロントの実装に合わせる）

@@ -3,26 +3,12 @@
 // Behavior: userId-scoped Expense list, returns both { items, rows: items }.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
 import prisma from '@/lib/prisma';
-const COOKIE = 'recepita_session';
-
-type Session = { userId: string; email: string };
-
-function getSessionOrThrow(): Session {
-  const token = cookies().get(COOKIE)?.value;
-  if (!token) throw new Error('Unauthorized: missing session token');
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error('Server misconfig: JWT_SECRET is not set');
-  const payload = jwt.verify(token, secret) as Session;
-  if (!payload?.userId) throw new Error('Unauthorized: invalid session payload');
-  return payload;
-}
+import { getSessionOrThrow } from '@/lib/auth-server';
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = getSessionOrThrow();
+    const { userId } = await getSessionOrThrow();
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, Number(searchParams.get('page') || '1'));
@@ -37,7 +23,7 @@ export async function GET(req: NextRequest) {
       where.OR = [
         { memo: { contains: q, mode: 'insensitive' } },
         { category: { contains: q, mode: 'insensitive' } },
-        { client: { contains: q, mode: 'insensitive' } },
+        { vendor: { contains: q, mode: 'insensitive' } },
       ];
     }
 

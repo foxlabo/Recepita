@@ -42,7 +42,7 @@ const SAFE_DEFAULTS: Defaults = {
 }
 
 export async function GET() {
-  const s = getSession()
+  const s = await getSession()
   if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 })
 
   const repo = getRepo(prisma as any)
@@ -60,7 +60,7 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-  const s = getSession()
+  const s = await getSession()
   if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 })
 
   const repo = getRepo(prisma as any)

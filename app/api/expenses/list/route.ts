@@ -6,7 +6,7 @@ import { getSession } from '@/lib/auth-server';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ items: [], total: 0, page: 1, pageSize: 50 });
 
   const url = new URL(req.url);

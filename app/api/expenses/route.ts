@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth-server';
 
 // GET /api/expenses … 一覧（date降順） + itemsSummary を付与
 export async function GET() {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json([], { status: 200 });
 
   const list = await prisma.expense.findMany({
@@ -29,7 +29,7 @@ export async function GET() {
 
 // POST /api/expenses … 作成（{ date, amount, vendor, memo?, category?, items?, subtotal?, tax?, total?, paymentMethod? }）
 export async function POST(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ error: 'auth' }, { status: 401 });
 
   const { date, amount, vendor, memo, category, items, subtotal, tax, total, paymentMethod } =

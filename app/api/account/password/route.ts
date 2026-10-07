@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { getSession } from '@/lib/auth-server';
 
 export async function POST(req: Request){
-  const s = getSession(); if(!s) return NextResponse.json({ error:'auth' }, { status:401 });
+  const s = await getSession(); if(!s) return NextResponse.json({ error:'auth' }, { status:401 });
   const { current, next } = await req.json();
   const user = await prisma.user.findUnique({ where:{ id: s.userId } });
   if(!user) return NextResponse.json({ error:'auth' }, { status:401 });

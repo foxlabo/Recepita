@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 // POST: bulk create drafts
 export async function POST(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok: false }, { status: 401 });
 
   const { drafts } = await req.json().catch(() => ({ drafts: [] as any[] }));

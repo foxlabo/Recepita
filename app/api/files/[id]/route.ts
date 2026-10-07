@@ -5,7 +5,8 @@ import { localFullPath } from '@/lib/fileStorage';
 
 export const runtime = 'nodejs';
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = params.id;
   const file = await prisma.receiptFile.findUnique({ where: { id } });
   if (!file) return new NextResponse('not found', { status: 404 });

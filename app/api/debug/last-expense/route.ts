@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth-server';
 
 export async function GET() {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok:false, message:'unauthorized' }, { status: 401 });
 
   const row = await prisma.expense.findFirst({

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // POST /api/expense-drafts/finalize
 // finalize={ids?: string[]} 省略時は全件
 export async function POST(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok: false }, { status: 401 });
   const body = await req.json().catch(()=>({} as any));
   const ids: string[] | undefined = body?.ids;

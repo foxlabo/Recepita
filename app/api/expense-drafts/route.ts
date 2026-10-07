@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 // GET: list drafts (unauthorized when not logged in)
 export async function GET() {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 });
   const rows = await prisma.draftExpense.findMany({
     where: { userId: s.userId },
@@ -28,7 +28,7 @@ export async function GET() {
 
 // POST: create one draft
 export async function POST(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok: false }, { status: 401 });
   const b = await req.json();
   const row = await prisma.draftExpense.create({
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
 // DELETE: delete by ids (or all with all=true)
 export async function DELETE(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ ok: false }, { status: 401 });
   const url = new URL(req.url);
   const all = url.searchParams.get('all') === 'true';

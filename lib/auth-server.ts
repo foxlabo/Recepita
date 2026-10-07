@@ -3,7 +3,7 @@ import 'server-only'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
-const COOKIE = 'recepita_session'
+export const SESSION_COOKIE = 'recepita_session'
 const MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
 export type Session = { userId: string; email: string }
@@ -26,8 +26,9 @@ export function verifySession(token: string): Session | null {
   }
 }
 
-export function setSessionCookie(token: string) {
-  cookies().set(COOKIE, token, {
+export async function setSessionCookie(token: string) {
+  const store = await cookies()
+  store.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -36,27 +37,26 @@ export function setSessionCookie(token: string) {
   })
 }
 
-export function clearSessionCookie() {
-  cookies().set(COOKIE, '', { httpOnly: true, maxAge: 0, path: '/' })
+export async function clearSessionCookie() {
+  const store = await cookies()
+  store.set(SESSION_COOKIE, '', { httpOnly: true, maxAge: 0, path: '/' })
 }
 
-export function getSession(): Session | null {
-  const c = cookies().get(COOKIE)?.value
-  if (!c) return null
-  try {
-    return jwt.verify(c, getJwtSecret()) as Session
-  } catch (e: any) {
-    console.warn('getSession.verify.failed', e?.name || e)
-    return null
-  }
+export async function getSession(): Promise<Session | null> {
+  const store = await cookies()
+  const token = store.get(SESSION_COOKIE)?.value
+  if (!token) return null
+  const session = verifySession(token)
+  if (!session) console.warn('getSession.verify.failed')
+  return session
 }
 
-export function getSessionOrThrow(): Session {
-  const s = getSession()
+export async function getSessionOrThrow(): Promise<Session> {
+  const s = await getSession()
   if (!s) throw new Error('Unauthorized')
   return s
 }
 
-export function getUserIdOrThrow(): string {
-  return getSessionOrThrow().userId
+export async function getUserIdOrThrow(): Promise<string> {
+  return (await getSessionOrThrow()).userId
 }

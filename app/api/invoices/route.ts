@@ -25,7 +25,7 @@ function normalizeIssueDate(input: unknown): Date | null {
 
 // ============ 一覧取得 ============
 export async function GET() {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json([], { status: 200 });
 
   const rows = await prisma.invoice.findMany({
@@ -38,7 +38,7 @@ export async function GET() {
 
 // ============ 追加 ============
 export async function POST(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ error: 'auth' }, { status: 401 });
 
   const { client, amount, issueDate } = await req.json();
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
 // ============ 1件削除 ============
 export async function DELETE(req: Request) {
-  const s = getSession();
+  const s = await getSession();
   if (!s) return NextResponse.json({ error: 'auth' }, { status: 401 });
 
   const { id } = await req.json();
