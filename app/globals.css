@@ -55,14 +55,18 @@
   color-scheme: dark;
 }
 
-html,
-body {
-  height: 100%;
-}
-body {
-  background: var(--bg);
-  color: var(--fg);
-}
-a {
-  color: inherit;
+/* Element defaults live in the base layer so Tailwind utilities
+   (e.g. text-recepita on a link) can override them. */
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+  }
+  a {
+    color: inherit;
+  }
 }

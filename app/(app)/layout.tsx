@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen flex-col">
       <header className="h-16 bg-(--card) border-b border-(--border) flex items-center px-4 shadow-xs">
-        <Link href="/" className="font-bold text-recepita" style={{ fontSize: 24 }}>
+        <Link href="/" className="font-bold text-recepita dark:text-green-400" style={{ fontSize: 24 }}>
           Recepita
         </Link>
         <div className="ml-auto">

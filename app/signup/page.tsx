@@ -76,7 +76,10 @@ export default function Signup() {
               {devMode && verificationUrl && (
                 <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">
                   <div className="font-medium">開発モード</div>
-                  <a className="mt-2 block break-all text-recepita hover:underline" href={verificationUrl}>
+                  <a
+                    className="mt-2 block break-all text-recepita dark:text-green-400 hover:underline"
+                    href={verificationUrl}
+                  >
                     {verificationUrl}
                   </a>
                 </div>
@@ -85,7 +88,7 @@ export default function Signup() {
                 確認メールを再送
               </Button>
               <div className="text-sm">
-                <a className="text-recepita hover:underline" href="/login">
+                <a className="text-recepita dark:text-green-400 hover:underline" href="/login">
                   ログインに戻る
                 </a>
               </div>
@@ -140,7 +143,7 @@ export default function Signup() {
             </Button>
 
             <div className="text-sm">
-              <a className="text-recepita hover:underline" href="/login">
+              <a className="text-recepita dark:text-green-400 hover:underline" href="/login">
                 ログインに戻る
               </a>
             </div>

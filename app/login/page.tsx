@@ -154,7 +154,7 @@ function LoginForm() {
             )}
 
             <div className="text-sm">
-              <a className="text-recepita hover:underline" href="/signup">
+              <a className="text-recepita dark:text-green-400 hover:underline" href="/signup">
                 新規登録
               </a>
             </div>
