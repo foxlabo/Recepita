@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { csvRow } from '@/lib/csv';
 
 type Row = {
   id: string;
@@ -155,13 +156,10 @@ export default function ReceiptsList() {
   }
   function toCsv(list: Row[]): string {
     const header = ['登録日','取引日','金額','取引先','区分','品目','メモ'];
-    const esc = (v:any) => {
-      const s = (v ?? '').toString().replaceAll('\r','').replaceAll('\n',' ');
-      return /[",]/.test(s) ? `"${s.replaceAll('"','""')}"` : s;
-    };
-    const lines = [header.join(',')];
+    const lines = [csvRow(header)];
     list.forEach(r => {
-      lines.push([
+      // csvRow は = + - @ で始まるセルを無害化する（CSVインジェクション対策）
+      lines.push(csvRow([
         fmtDate(r.createdAt),
         fmtDate(r.date),
         r.amount,
@@ -169,7 +167,7 @@ export default function ReceiptsList() {
         r.category ?? '',
         (r.itemsText ?? '').replace(/\r?\n/g, ' ').trim(),
         r.memo ?? ''
-      ].map(esc).join(','));
+      ]));
     });
     return lines.join('\r\n');
   }
