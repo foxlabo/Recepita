@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
-@custom-variant dark (&:is(.dark *));
+/* Dark mode = the `dark` class on <html> (set before paint by the inline
+   script in app/layout.tsx, toggled by components/ThemeToggle.tsx). */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-recepita-50: #ecfdf5;
@@ -26,17 +28,19 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--border, var(--color-gray-200, currentcolor));
   }
 }
 
 /* Light theme tokens */
 :root{
-  --bg:#F9FAFB; --card:#FFFFFF; --fg:#1F2937; --muted:#6B7280; --border:#E5E7EB;
+  --bg:#F9FAFB; --card:#FFFFFF; --fg:#1F2937; --muted:#6B7280; --border:#E5E7EB; --muted-bg:#F3F4F6;
+  color-scheme: light;
 }
-/* Dark theme tokens */
+/* Dark theme tokens (native form controls / scrollbars follow color-scheme) */
 .dark{
-  --bg:#0D1512; --card:#0F1A17; --fg:#E6F4EE; --muted:#99B2A5; --border:rgba(153,178,165,.25);
+  --bg:#0D1512; --card:#0F1A17; --fg:#E6F4EE; --muted:#99B2A5; --border:rgba(153,178,165,.25); --muted-bg:#101a16;
+  color-scheme: dark;
 }
 
 html,body{height:100%}
