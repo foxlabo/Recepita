@@ -71,16 +71,18 @@ function LineChart({ months, a, b, height = 200 }: { months: string[]; a: number
       viewBox={`0 0 ${width} ${heightPx}`}
       preserveAspectRatio="xMidYMid meet"
       className="block"
+      role="img"
+      aria-label="売上と経費の12ヶ月推移（折れ線グラフ）"
     >
       {/* X軸 */}
       <line x1={pad} y1={pad + plotH} x2={width - pad} y2={pad + plotH} stroke="currentColor" opacity={0.25} />
 
       {/* グリッド & 目盛 0/25/50/75/100% */}
-      {[0, 0.25, 0.5, 0.75, 1].map((frac, idx) => {
+      {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
         const y = pad + (1 - frac) * plotH;
         const val = Math.round(maxY * frac).toLocaleString();
         return (
-          <g key={idx}>
+          <g key={frac}>
             <line x1={pad} y1={y} x2={width - pad} y2={y} stroke="currentColor" opacity={0.12} />
             <text x={4} y={y + 4} fontSize="10" fill="currentColor" opacity="0.7">
               {val}
@@ -93,7 +95,7 @@ function LineChart({ months, a, b, height = 200 }: { months: string[]; a: number
       {M.map((m, i) => {
         const x = pad + i * xStep;
         return (
-          <text key={i} x={x} y={heightPx - 6} fontSize="10" fill="currentColor" opacity="0.7" textAnchor="middle">
+          <text key={m} x={x} y={heightPx - 6} fontSize="10" fill="currentColor" opacity="0.7" textAnchor="middle">
             {m.slice(2)}
           </text>
         );
@@ -147,7 +149,7 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
     angle = ang2;
     return (
       <path
-        key={idx}
+        key={row.name}
         d={d}
         fill={row.name === '__placeholder__' ? 'transparent' : PIE_COLORS[idx % PIE_COLORS.length]}
         stroke={row.name === '__placeholder__' ? 'transparent' : undefined}
@@ -157,7 +159,14 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
 
   return (
     <div className="flex items-center gap-4 justify-center w-full">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="shrink-0"
+        role="img"
+        aria-label="カテゴリ別の経費（円グラフ）"
+      >
         {arcs}
       </svg>
       <div className="space-y-1">
@@ -179,6 +188,8 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
 }
 
 /* ===== メイン ===== */
+const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
 export default function Dashboard() {
   const now = yearMonthJST();
   const [year, setYear] = useState(now.year);
@@ -246,9 +257,9 @@ export default function Dashboard() {
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
           >
-            {[...Array(12)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {i + 1}
+            {MONTHS.map((m) => (
+              <option key={m} value={m}>
+                {m}
               </option>
             ))}
           </select>
@@ -391,8 +402,8 @@ export default function Dashboard() {
             <CardContent>
               {data?.alerts?.length ? (
                 <ul className="list-disc pl-5 space-y-1 text-sm">
-                  {data.alerts.map((a, idx) => (
-                    <li key={idx}>{a.message}</li>
+                  {data.alerts.map((a) => (
+                    <li key={`${a.type}:${a.message}`}>{a.message}</li>
                   ))}
                 </ul>
               ) : (
