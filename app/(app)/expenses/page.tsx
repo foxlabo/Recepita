@@ -57,7 +57,8 @@ function SingleRegisterTab({ onAppend }: { onAppend: (row: DraftPayload) => Prom
       // 金額（total > subtotal+tax > amount）
       const subtotal = toNum(d.subtotal);
       const tax = toNum(d.tax);
-      const amount = toNum(d.total) ?? (subtotal != null && tax != null ? subtotal + tax : undefined) ?? toNum(d.amount) ?? 0;
+      const amount =
+        toNum(d.total) ?? (subtotal != null && tax != null ? subtotal + tax : undefined) ?? toNum(d.amount) ?? 0;
 
       // 品目テキスト
       const items = formatItemsText(itemsFromJson(d.items));
@@ -113,25 +114,49 @@ function SingleRegisterTab({ onAppend }: { onAppend: (row: DraftPayload) => Prom
         <form onSubmit={submit} id="form-new" className="grid gap-3 md:grid-cols-4 w-full">
           {/* 1行目：4列 */}
           <div className="space-y-1">
-            <label className="text-sm text-(--muted)" htmlFor="new-trade-date">取引日</label>
-            <Input id="new-trade-date" type="date" value={form.tradeDate} onChange={(e) => setForm({ ...form, tradeDate: e.target.value })} />
+            <label className="text-sm text-(--muted)" htmlFor="new-trade-date">
+              取引日
+            </label>
+            <Input
+              id="new-trade-date"
+              type="date"
+              value={form.tradeDate}
+              onChange={(e) => setForm({ ...form, tradeDate: e.target.value })}
+            />
           </div>
           <div className="space-y-1">
-            <label className="text-sm text-(--muted)" htmlFor="new-amount">金額</label>
-            <Input id="new-amount" inputMode="numeric" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            <label className="text-sm text-(--muted)" htmlFor="new-amount">
+              金額
+            </label>
+            <Input
+              id="new-amount"
+              inputMode="numeric"
+              value={form.amount}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+            />
           </div>
           <div className="space-y-1">
-            <label className="text-sm text-(--muted)" htmlFor="new-vendor">取引先</label>
+            <label className="text-sm text-(--muted)" htmlFor="new-vendor">
+              取引先
+            </label>
             <Input id="new-vendor" value={form.vendor} onChange={(e) => setForm({ ...form, vendor: e.target.value })} />
           </div>
           <div className="space-y-1">
-            <label className="text-sm text-(--muted)" htmlFor="new-category">区分</label>
-            <Input id="new-category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            <label className="text-sm text-(--muted)" htmlFor="new-category">
+              区分
+            </label>
+            <Input
+              id="new-category"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            />
           </div>
 
           {/* 2行目：品目（フル幅） */}
           <div className="space-y-1 md:col-span-full">
-            <label className="text-sm text-(--muted)" htmlFor="new-items">品目</label>
+            <label className="text-sm text-(--muted)" htmlFor="new-items">
+              品目
+            </label>
             <textarea
               id="new-items"
               rows={2}
@@ -144,7 +169,9 @@ function SingleRegisterTab({ onAppend }: { onAppend: (row: DraftPayload) => Prom
 
           {/* 3行目：メモ（フル幅） */}
           <div className="space-y-1 md:col-span-full">
-            <label className="text-sm text-(--muted)" htmlFor="new-memo">メモ</label>
+            <label className="text-sm text-(--muted)" htmlFor="new-memo">
+              メモ
+            </label>
             <Input id="new-memo" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} />
           </div>
 
@@ -167,7 +194,9 @@ function SingleRegisterTab({ onAppend }: { onAppend: (row: DraftPayload) => Prom
             </Button>
             <span className="text-(--muted) ml-2">状態: {statusText}</span>
             <div className="ml-auto">
-              <Button type="submit" disabled={busy !== 'idle'}>追加</Button>
+              <Button type="submit" disabled={busy !== 'idle'}>
+                追加
+              </Button>
             </div>
           </div>
         </form>
@@ -295,7 +324,11 @@ export default function Expenses() {
         </button>
       </div>
       <div className="pt-2 space-y-4">
-        {active === 'single' ? <SingleRegisterTab onAppend={addDraft} /> : <BulkRegisterPage onAppendDrafts={addDrafts} />}
+        {active === 'single' ? (
+          <SingleRegisterTab onAppend={addDraft} />
+        ) : (
+          <BulkRegisterPage onAppendDrafts={addDrafts} />
+        )}
 
         {/* 下書き（DB） */}
         <DraftsCard

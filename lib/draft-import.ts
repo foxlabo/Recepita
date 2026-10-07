@@ -80,10 +80,10 @@ export function coerceDraftFromCsv(rec: Record<string, string>): DraftPayload {
   ]);
 
   return {
-    registeredDate: registeredRaw ? normalizeDateString(registeredRaw) ?? registeredRaw : undefined,
+    registeredDate: registeredRaw ? (normalizeDateString(registeredRaw) ?? registeredRaw) : undefined,
     // 解釈できない日付はそのまま送り、サーバーが「N件目: 取引日は…」と返す
     tradeDate: normalizeDateString(tradeRaw) ?? tradeRaw,
-    amount: amountRaw ? parseYen(amountRaw) ?? Number.NaN : 0,
+    amount: amountRaw ? (parseYen(amountRaw) ?? Number.NaN) : 0,
     vendor: find(['取引先', 'vendor', '相手先', '宛先', '宛名']),
     // 区分：レシートタイプ系も拾う
     category: find(['区分', 'レシートタイプ', 'receiptType', 'category']),

@@ -92,7 +92,9 @@ function LoginForm() {
       <Card className="w-[380px]">
         <CardContent>
           {/* バナー表示 */}
-          {changed === '1' && <Banner tone="ok">メールアドレスを変更しました。新しいメールアドレスでログインしてください。</Banner>}
+          {changed === '1' && (
+            <Banner tone="ok">メールアドレスを変更しました。新しいメールアドレスでログインしてください。</Banner>
+          )}
           {changed === '0' && <Banner tone="warn">{failText}</Banner>}
           {verified === '1' && <Banner tone="ok">メール確認が完了しました。ログインしてください。</Banner>}
           {verified === '0' && <Banner tone="warn">{failText}</Banner>}
@@ -105,7 +107,9 @@ function LoginForm() {
             <h2 className="text-xl font-semibold">ログイン</h2>
 
             <div className="space-y-1">
-              <label className="text-sm text-(--muted)" htmlFor="login-email">メール</label>
+              <label className="text-sm text-(--muted)" htmlFor="login-email">
+                メール
+              </label>
               <Input
                 id="login-email"
                 type="email"
@@ -117,7 +121,9 @@ function LoginForm() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-(--muted)" htmlFor="login-password">パスワード</label>
+              <label className="text-sm text-(--muted)" htmlFor="login-password">
+                パスワード
+              </label>
               <Input
                 id="login-password"
                 type="password"
@@ -134,9 +140,7 @@ function LoginForm() {
 
             {showResend && (
               <div className="pt-1 space-y-1">
-                <p className="text-xs text-(--muted)">
-                  メール認証がお済みでない場合は、確認メールを再送できます。
-                </p>
+                <p className="text-xs text-(--muted)">メール認証がお済みでない場合は、確認メールを再送できます。</p>
                 <Button
                   type="button"
                   variant="outline"

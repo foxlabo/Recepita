@@ -99,7 +99,9 @@ export default function Invoices() {
             }}
           >
             <div className="space-y-1">
-              <label className="text-sm text-(--muted)" htmlFor="invoice-client">売上名</label>
+              <label className="text-sm text-(--muted)" htmlFor="invoice-client">
+                売上名
+              </label>
               <Input
                 id="invoice-client"
                 value={form.client}
@@ -107,7 +109,9 @@ export default function Invoices() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm text-(--muted)" htmlFor="invoice-amount">金額</label>
+              <label className="text-sm text-(--muted)" htmlFor="invoice-amount">
+                金額
+              </label>
               <Input
                 id="invoice-amount"
                 inputMode="numeric"
@@ -117,7 +121,9 @@ export default function Invoices() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm text-(--muted)" htmlFor="invoice-issue-date">発行日</label>
+              <label className="text-sm text-(--muted)" htmlFor="invoice-issue-date">
+                発行日
+              </label>
               <Input
                 id="invoice-issue-date"
                 type="date"
@@ -131,7 +137,9 @@ export default function Invoices() {
               </div>
             )}
             <div className="md:col-span-3">
-              <Button type="submit" disabled={saving}>{saving ? '追加中…' : '追加'}</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? '追加中…' : '追加'}
+              </Button>
             </div>
           </form>
         </CardContent>

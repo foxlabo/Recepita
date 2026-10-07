@@ -5,12 +5,7 @@ import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleRouteError, UnauthorizedError } from '@/lib/http';
-import {
-  SESSION_COOKIE,
-  SESSION_MAX_AGE,
-  signSessionToken,
-  verifySessionToken,
-} from '@/lib/session-token';
+import { SESSION_COOKIE, SESSION_MAX_AGE, signSessionToken, verifySessionToken } from '@/lib/session-token';
 
 export { SESSION_COOKIE } from '@/lib/session-token';
 export { jsonError, UnauthorizedError } from '@/lib/http';
@@ -94,10 +89,7 @@ type RouteCtx<P> = { params: Promise<P> };
  * JSON responses.
  */
 export function withAuth<P extends Record<string, string | string[]> = {}>(
-  handler: (
-    req: NextRequest,
-    ctx: { session: Session; params: P },
-  ) => Promise<Response> | Response,
+  handler: (req: NextRequest, ctx: { session: Session; params: P }) => Promise<Response> | Response,
 ) {
   return async (req: NextRequest, ctx: RouteCtx<P>): Promise<Response> => {
     try {

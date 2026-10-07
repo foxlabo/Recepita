@@ -12,7 +12,10 @@ import { normalizeEmail } from '@/lib/validation';
 export const runtime = 'nodejs';
 
 const bodySchema = z.object({
-  email: z.string({ error: 'メールアドレスとパスワードを入力してください。' }).min(1, 'メールアドレスとパスワードを入力してください。').max(254),
+  email: z
+    .string({ error: 'メールアドレスとパスワードを入力してください。' })
+    .min(1, 'メールアドレスとパスワードを入力してください。')
+    .max(254),
   password: passwordInputSchema,
 });
 

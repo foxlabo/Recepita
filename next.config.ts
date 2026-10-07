@@ -1,4 +1,4 @@
-import type { NextConfig } from 'next'
+import type { NextConfig } from 'next';
 
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -19,7 +19,7 @@ const securityHeaders = [
   ...(process.env.NODE_ENV === 'production'
     ? [{ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' }]
     : []),
-]
+];
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -32,8 +32,8 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: '11mb',
   },
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }]
+    return [{ source: '/:path*', headers: securityHeaders }];
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;

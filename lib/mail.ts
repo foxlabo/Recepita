@@ -28,9 +28,7 @@ export async function sendMail(msg: MailMessage): Promise<void> {
       );
       return;
     }
-    throw new Error(
-      'Mail is not configured: set AZURE_COMMUNICATION_CONNECTION_STRING and AZURE_COMMUNICATION_SENDER',
-    );
+    throw new Error('Mail is not configured: set AZURE_COMMUNICATION_CONNECTION_STRING and AZURE_COMMUNICATION_SENDER');
   }
 
   const client = new EmailClient(cfg.connectionString);

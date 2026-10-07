@@ -111,19 +111,13 @@ async function readUpload(req: Request, contentType: string) {
 function normalizeDetectedForTotals(raw: any): any {
   const detected: any = { ...(raw || {}) };
 
-  const toNum = (v: any): number | undefined =>
-    typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+  const toNum = (v: any): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
   // Azure Invoice の別名っぽいフィールドも一応拾っておく
   let subtotal = toNum(detected.subtotal ?? detected.subTotal);
   let tax = toNum(detected.tax ?? detected.totalTax);
   // amountDue / invoiceTotal あたりも total 候補にする
-  let total = toNum(
-    detected.total ??
-      detected.amountDue ??
-      detected.invoiceTotal ??
-      detected.amount,
-  );
+  let total = toNum(detected.total ?? detected.amountDue ?? detected.invoiceTotal ?? detected.amount);
   const amount = toNum(detected.amount);
 
   // subtotal が無ければ amount を小計扱いに
@@ -172,7 +166,13 @@ type ProviderError = { message?: string; status?: number; retryAfter?: string | 
 function isTransient(e: ProviderError) {
   const status = e.status ?? 0;
   const msg = (e.message ?? '').toLowerCase();
-  return status === 429 || status >= 500 || msg.includes('timed out') || msg.includes('econnreset') || msg.includes('fetch failed');
+  return (
+    status === 429 ||
+    status >= 500 ||
+    msg.includes('timed out') ||
+    msg.includes('econnreset') ||
+    msg.includes('fetch failed')
+  );
 }
 
 async function runOcr(buffer: Buffer, mime: DetectedType, logicalModel: LogicalModel) {

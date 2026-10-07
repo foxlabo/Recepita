@@ -11,10 +11,10 @@ import { parseAmountInput } from '@/lib/items';
 type Row = {
   id: string;
   createdAt: string; // 登録日時（ISO）
-  date: string;      // 取引日（JST の YYYY-MM-DD）
+  date: string; // 取引日（JST の YYYY-MM-DD）
   amount: number;
   vendor: string;
-  category?: string|null;
+  category?: string | null;
   memo?: string;
   itemsText?: string; // "商品名:金額, ..." 形式（ExpenseItem から生成）
 };
@@ -40,12 +40,12 @@ const PAGE_SIZE = 50;
 
 // ===== ページング補助 =====
 const MAX_VISIBLE = 7; // 同時表示するページ番号の最大個数（必要に応じて 5〜9 程度に変更可）
-function pageRange(current: number, total: number, maxVisible = MAX_VISIBLE){
-  let start = Math.max(1, current - Math.floor(maxVisible/2));
-  let end   = Math.min(total, start + maxVisible - 1);
+function pageRange(current: number, total: number, maxVisible = MAX_VISIBLE) {
+  let start = Math.max(1, current - Math.floor(maxVisible / 2));
+  let end = Math.min(total, start + maxVisible - 1);
   // 端で個数が目減りしないよう再調整
   start = Math.max(1, Math.min(start, end - maxVisible + 1));
-  return Array.from({length: end - start + 1}, (_,i)=> start + i);
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
 const pagerButton =
@@ -87,7 +87,10 @@ export default function ReceiptsList() {
         page: String(page),
         pageSize: String(PAGE_SIZE),
       });
-      const r = await fetch('/api/expenses/list?' + params.toString(), { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+      const r = await fetch('/api/expenses/list?' + params.toString(), {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
       if (redirectIfUnauthorized(r)) return;
       if (!r.ok) {
         // 失敗時は表示中のデータと編集内容を残す
@@ -107,7 +110,9 @@ export default function ReceiptsList() {
     }
   }, [year, month, page]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // total が変わって現在ページがはみ出したらクランプ
   useEffect(() => {
@@ -115,13 +120,13 @@ export default function ReceiptsList() {
   }, [page, totalPages]);
 
   function setEdit(id: string, patch: Edit) {
-    setEdits(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+    setEdits((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
     // 編集した行は更新対象として自動でチェック
-    setChecked(prev => (prev[id] ? prev : { ...prev, [id]: true }));
+    setChecked((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
   }
 
   // 全選択チェックボックス（制御コンポーネント。一部選択時は indeterminate）
-  const checkedCount = rows.filter(r => checked[r.id]).length;
+  const checkedCount = rows.filter((r) => checked[r.id]).length;
   const allChecked = rows.length > 0 && checkedCount === rows.length;
   const checkAllRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -131,7 +136,9 @@ export default function ReceiptsList() {
   function onCheckAll(e: React.ChangeEvent<HTMLInputElement>) {
     const on = e.target.checked;
     const obj: Record<string, boolean> = {};
-    rows.forEach(r => { obj[r.id] = on; });
+    rows.forEach((r) => {
+      obj[r.id] = on;
+    });
     setChecked(obj);
   }
 
@@ -142,7 +149,7 @@ export default function ReceiptsList() {
   };
 
   async function bulkUpdate() {
-    const targets = rows.filter(r => checked[r.id]);
+    const targets = rows.filter((r) => checked[r.id]);
     if (!targets.length) return alert('更新対象が選択されていません');
 
     const updates = [];
@@ -164,7 +171,7 @@ export default function ReceiptsList() {
       const res = await fetch('/api/expenses/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates })
+        body: JSON.stringify({ updates }),
       });
       if (redirectIfUnauthorized(res)) return;
       if (!res.ok) {
@@ -180,7 +187,7 @@ export default function ReceiptsList() {
 
   // 一括削除
   async function bulkDelete() {
-    const ids = rows.map(r => r.id).filter(id => checked[id]);
+    const ids = rows.map((r) => r.id).filter((id) => checked[id]);
     if (!ids.length) return alert('削除対象が選択されていません');
     if (!confirm(`${ids.length}件を削除します。よろしいですか？`)) return;
 
@@ -189,7 +196,7 @@ export default function ReceiptsList() {
       const res = await fetch('/api/expenses/bulk-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
+        body: JSON.stringify({ ids }),
       });
       if (redirectIfUnauthorized(res)) return;
       if (!res.ok) {
@@ -204,41 +211,50 @@ export default function ReceiptsList() {
   }
 
   // ===== エクスポート（期間選択 → CSV） =====
-  function* monthRange(y1:number,m1:number,y2:number,m2:number){
-    for (let ym = { year: y1, month: m1 }; ym.year * 12 + ym.month <= y2 * 12 + m2; ym = addMonths(ym.year, ym.month, 1)) {
+  function* monthRange(y1: number, m1: number, y2: number, m2: number) {
+    for (
+      let ym = { year: y1, month: m1 };
+      ym.year * 12 + ym.month <= y2 * 12 + m2;
+      ym = addMonths(ym.year, ym.month, 1)
+    ) {
       yield { y: ym.year, m: ym.month };
     }
   }
   function toCsv(list: Row[]): string {
-    const header = ['登録日','取引日','金額','取引先','区分','品目','メモ'];
+    const header = ['登録日', '取引日', '金額', '取引先', '区分', '品目', 'メモ'];
     const lines = [csvRow(header)];
-    list.forEach(r => {
+    list.forEach((r) => {
       // csvRow は = + - @ で始まるセルを無害化する（CSVインジェクション対策）
-      lines.push(csvRow([
-        formatDateJST(r.createdAt),
-        formatDateJST(r.date),
-        r.amount,
-        r.vendor ?? '',
-        r.category ?? '',
-        (r.itemsText ?? '').replace(/\r?\n/g, ' ').trim(),
-        r.memo ?? ''
-      ]));
+      lines.push(
+        csvRow([
+          formatDateJST(r.createdAt),
+          formatDateJST(r.date),
+          r.amount,
+          r.vendor ?? '',
+          r.category ?? '',
+          (r.itemsText ?? '').replace(/\r?\n/g, ' ').trim(),
+          r.memo ?? '',
+        ]),
+      );
     });
     return lines.join('\r\n');
   }
-  async function onExportCsv(){
+  async function onExportCsv() {
     if (fromYear * 12 + fromMonth > toYear * 12 + toMonth) {
       return alert('開始月は終了月以前を指定してください。');
     }
-    try{
+    try {
       setExporting(true);
       const acc: Row[] = [];
-      for (const {y,m} of monthRange(fromYear, fromMonth, toYear, toMonth)) {
-        let p = 1; const ps = 200;
+      for (const { y, m } of monthRange(fromYear, fromMonth, toYear, toMonth)) {
+        let p = 1;
+        const ps = 200;
         // ページング全件取得
         // eslint-disable-next-line no-constant-condition
         while (true) {
-          const r = await fetch(`/api/expenses/list?year=${y}&month=${m}&page=${p}&pageSize=${ps}`, { cache: 'no-store' });
+          const r = await fetch(`/api/expenses/list?year=${y}&month=${m}&page=${p}&pageSize=${ps}`, {
+            cache: 'no-store',
+          });
           if (redirectIfUnauthorized(r)) return;
           if (!r.ok) throw new Error(await apiErrorMessage(r, `${y}年${m}月のデータを取得できませんでした。`));
           const j: ListRes = await r.json();
@@ -254,13 +270,13 @@ export default function ReceiptsList() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `recepita_export_${fromYear}-${String(fromMonth).padStart(2,'0')}_to_${toYear}-${String(toMonth).padStart(2,'0')}.csv`;
+      a.download = `recepita_export_${fromYear}-${String(fromMonth).padStart(2, '0')}_to_${toYear}-${String(toMonth).padStart(2, '0')}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
       setExportOpen(false);
-    } catch(e) {
+    } catch (e) {
       alert('エクスポートに失敗しました\n' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setExporting(false);
@@ -269,9 +285,9 @@ export default function ReceiptsList() {
 
   // 年/月の選択肢
   const yearOptions = useMemo(() => {
-    return Array.from({length: 8}).map((_,i)=> today.year - i); // 直近8年
+    return Array.from({ length: 8 }).map((_, i) => today.year - i); // 直近8年
   }, [today.year]);
-  const monthOptions = [1,2,3,4,5,6,7,8,9,10,11,12];
+  const monthOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   const pages = pageRange(page, totalPages);
   const selectClass = 'border rounded-sm px-2 py-1 bg-(--card)';
 
@@ -286,14 +302,36 @@ export default function ReceiptsList() {
           <div className="flex flex-wrap items-center gap-3">
             <div>
               <span className="text-sm mr-2 text-(--muted)">年</span>
-              <select className={selectClass} value={year} onChange={e => { setPage(1); setYear(Number(e.target.value)); }}>
-                {yearOptions.map(y => (<option key={y} value={y}>{y}</option>))}
+              <select
+                className={selectClass}
+                value={year}
+                onChange={(e) => {
+                  setPage(1);
+                  setYear(Number(e.target.value));
+                }}
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <span className="text-sm mr-2 text-(--muted)">月</span>
-              <select className={selectClass} value={month} onChange={e => { setPage(1); setMonth(Number(e.target.value)); }}>
-                {monthOptions.map(m => (<option key={m} value={m}>{m}</option>))}
+              <select
+                className={selectClass}
+                value={month}
+                onChange={(e) => {
+                  setPage(1);
+                  setMonth(Number(e.target.value));
+                }}
+              >
+                {monthOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="text-sm text-(--muted) ml-auto">
@@ -308,7 +346,9 @@ export default function ReceiptsList() {
         <CardHeader className="p-4 border-b border-(--border)">
           <div className="flex items-center justify-between">
             <div>一覧（編集可）</div>
-            <Button variant="outline" onClick={() => setExportOpen(v => !v)}>エクスポート</Button>
+            <Button variant="outline" onClick={() => setExportOpen((v) => !v)}>
+              エクスポート
+            </Button>
           </div>
 
           {exportOpen && (
@@ -316,32 +356,59 @@ export default function ReceiptsList() {
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-(--muted)">開始</span>
-                  <select className={selectClass} value={fromYear} onChange={e=>setFromYear(Number(e.target.value))}>
-                    {yearOptions.map(y => (<option key={y} value={y}>{y}</option>))}
+                  <select
+                    className={selectClass}
+                    value={fromYear}
+                    onChange={(e) => setFromYear(Number(e.target.value))}
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
                   </select>
                   <span>年</span>
-                  <select className={selectClass} value={fromMonth} onChange={e=>setFromMonth(Number(e.target.value))}>
-                    {monthOptions.map(m => (<option key={m} value={m}>{m}</option>))}
+                  <select
+                    className={selectClass}
+                    value={fromMonth}
+                    onChange={(e) => setFromMonth(Number(e.target.value))}
+                  >
+                    {monthOptions.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
                   </select>
                   <span>月</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-(--muted)">終了</span>
-                  <select className={selectClass} value={toYear} onChange={e=>setToYear(Number(e.target.value))}>
-                    {yearOptions.map(y => (<option key={y} value={y}>{y}</option>))}
+                  <select className={selectClass} value={toYear} onChange={(e) => setToYear(Number(e.target.value))}>
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
                   </select>
                   <span>年</span>
-                  <select className={selectClass} value={toMonth} onChange={e=>setToMonth(Number(e.target.value))}>
-                    {monthOptions.map(m => (<option key={m} value={m}>{m}</option>))}
+                  <select className={selectClass} value={toMonth} onChange={(e) => setToMonth(Number(e.target.value))}>
+                    {monthOptions.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
                   </select>
                   <span>月</span>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                  <Button onClick={onExportCsv} disabled={exporting}>{exporting ? '出力中…' : 'CSV出力'}</Button>
+                  <Button onClick={onExportCsv} disabled={exporting}>
+                    {exporting ? '出力中…' : 'CSV出力'}
+                  </Button>
                 </div>
               </div>
               <div className="text-xs text-(--muted) mt-2">
-                ※ 指定期間（開始〜終了）の全件をCSVに出力します。編集内容は「一括更新」反映後にエクスポートしてください。
+                ※
+                指定期間（開始〜終了）の全件をCSVに出力します。編集内容は「一括更新」反映後にエクスポートしてください。
               </div>
             </div>
           )}
@@ -349,7 +416,10 @@ export default function ReceiptsList() {
 
         <CardContent>
           {loadError && (
-            <div role="alert" className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div
+              role="alert"
+              className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
               {loadError}
             </div>
           )}
@@ -388,7 +458,7 @@ export default function ReceiptsList() {
                             type="checkbox"
                             aria-label="選択"
                             checked={!!checked[r.id]}
-                            onChange={ev => setChecked(prev => ({ ...prev, [r.id]: ev.target.checked }))}
+                            onChange={(ev) => setChecked((prev) => ({ ...prev, [r.id]: ev.target.checked }))}
                           />
                         </div>
                       </td>
@@ -400,7 +470,7 @@ export default function ReceiptsList() {
                           type="date"
                           className="min-w-[150px]"
                           value={formatDateJST(e.date ?? r.date)}
-                          onChange={ev => setEdit(r.id, { date: ev.target.value })}
+                          onChange={(ev) => setEdit(r.id, { date: ev.target.value })}
                         />
                       </td>
                       <td className="p-2 align-top">
@@ -410,39 +480,43 @@ export default function ReceiptsList() {
                           aria-invalid={badAmount || undefined}
                           title={badAmount ? '金額は数値で入力してください' : undefined}
                           value={e.amount ?? String(r.amount)}
-                          onChange={ev => setEdit(r.id, { amount: ev.target.value })}
+                          onChange={(ev) => setEdit(r.id, { amount: ev.target.value })}
                         />
                       </td>
                       <td className="p-2 align-top">
                         <Input
                           value={e.vendor ?? r.vendor}
-                          onChange={ev => setEdit(r.id, { vendor: ev.target.value })}
+                          onChange={(ev) => setEdit(r.id, { vendor: ev.target.value })}
                         />
                       </td>
                       <td className="p-2 align-top">
                         <Input
-                          value={e.category ?? (r.category ?? '')}
-                          onChange={ev => setEdit(r.id, { category: ev.target.value })}
+                          value={e.category ?? r.category ?? ''}
+                          onChange={(ev) => setEdit(r.id, { category: ev.target.value })}
                         />
                       </td>
                       <td className="p-2 align-top">
                         <Input
-                          title={e.itemsText ?? (r.itemsText ?? '')}
-                          value={e.itemsText ?? (r.itemsText ?? '')}
-                          onChange={ev => setEdit(r.id, { itemsText: ev.target.value })}
+                          title={e.itemsText ?? r.itemsText ?? ''}
+                          value={e.itemsText ?? r.itemsText ?? ''}
+                          onChange={(ev) => setEdit(r.id, { itemsText: ev.target.value })}
                         />
                       </td>
                       <td className="p-2 align-top">
                         <Input
-                          value={e.memo ?? (r.memo ?? '')}
-                          onChange={ev => setEdit(r.id, { memo: ev.target.value })}
+                          value={e.memo ?? r.memo ?? ''}
+                          onChange={(ev) => setEdit(r.id, { memo: ev.target.value })}
                         />
                       </td>
                     </tr>
                   );
                 })}
                 {rows.length === 0 && (
-                  <tr><td colSpan={8} className="p-3 text-(--muted)">{loading ? '読込中…' : 'データなし'}</td></tr>
+                  <tr>
+                    <td colSpan={8} className="p-3 text-(--muted)">
+                      {loading ? '読込中…' : 'データなし'}
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -464,7 +538,7 @@ export default function ReceiptsList() {
               {pages[0] > 1 && <span className="px-1 text-(--muted)">…</span>}
 
               {/* 中央のページ群（現在のページを強調） */}
-              {pages.map(p => (
+              {pages.map((p) => (
                 <button
                   key={p}
                   onClick={() => setPage(p)}

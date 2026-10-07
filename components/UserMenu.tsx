@@ -1,7 +1,7 @@
 'use client';
 import ThemeToggle from '@/components/ThemeToggle';
 export default function UserMenu({ email }: { email?: string }) {
-  async function doLogout(){
+  async function doLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     if (typeof window !== 'undefined') location.href = '/login';
   }

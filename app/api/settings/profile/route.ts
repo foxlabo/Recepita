@@ -51,22 +51,22 @@ export const PUT = withAuth(async (req, { session }) => {
   const body = await readJson(req, profileSchema);
 
   const data = {
-    lastName:       body.lastName ?? null,
-    firstName:      body.firstName ?? null,
-    lastNameKana:   body.lastNameKana ?? null,
-    firstNameKana:  body.firstNameKana ?? null,
-    birthDate:      toDateOrNull(body.birthDate),
-    gender:         body.gender ?? null,
-    phone:          body.phone ?? null,
-    postalCode:     body.postalCode ?? null,
-    prefecture:     body.prefecture ?? null,
-    city:           body.city ?? null,
-    address1:       body.address1 ?? null,
-    address2:       body.address2 ?? null,
-    businessName:   body.businessName ?? null,
-    startDate:      toDateOrNull(body.startDate),
-    occupation:     body.occupation ?? null,
-    invoiceNo:      body.invoiceNo ?? null,
+    lastName: body.lastName ?? null,
+    firstName: body.firstName ?? null,
+    lastNameKana: body.lastNameKana ?? null,
+    firstNameKana: body.firstNameKana ?? null,
+    birthDate: toDateOrNull(body.birthDate),
+    gender: body.gender ?? null,
+    phone: body.phone ?? null,
+    postalCode: body.postalCode ?? null,
+    prefecture: body.prefecture ?? null,
+    city: body.city ?? null,
+    address1: body.address1 ?? null,
+    address2: body.address2 ?? null,
+    businessName: body.businessName ?? null,
+    startDate: toDateOrNull(body.startDate),
+    occupation: body.occupation ?? null,
+    invoiceNo: body.invoiceNo ?? null,
   };
 
   const saved = await prisma.userProfile.upsert({

@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 function intParam(v: string | null, fallback: number) {
-  if (v === null || v.trim() === "") return fallback;
+  if (v === null || v.trim() === '') return fallback;
   const n = Number(v);
   return Number.isInteger(n) ? n : fallback;
 }

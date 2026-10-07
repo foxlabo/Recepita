@@ -1,16 +1,11 @@
 import type { OcrProvider, OcrResult } from './adapter';
 
-const API_VERSION =
-  process.env.AZURE_DOCUMENT_INTELLIGENCE_API_VERSION || '2023-07-31';
+const API_VERSION = process.env.AZURE_DOCUMENT_INTELLIGENCE_API_VERSION || '2023-07-31';
 const ENDPOINT = process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
 const KEY = process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY;
 
-if (!ENDPOINT)
-  console.warn(
-    '[Azure OCR] Missing AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT',
-  );
-if (!KEY)
-  console.warn('[Azure OCR] Missing AZURE_DOCUMENT_INTELLIGENCE_KEY');
+if (!ENDPOINT) console.warn('[Azure OCR] Missing AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT');
+if (!KEY) console.warn('[Azure OCR] Missing AZURE_DOCUMENT_INTELLIGENCE_KEY');
 
 type LogicalModel = 'receipt' | 'invoice';
 
@@ -34,11 +29,7 @@ function buildModelUrl(logical: LogicalModel) {
   return `${ENDPOINT}/formrecognizer/documentModels/${name}:analyze?api-version=${API_VERSION}`;
 }
 
-async function analyzeWithModel(
-  buffer: Buffer,
-  mimeType = 'application/octet-stream',
-  logicalModel: LogicalModel,
-) {
+async function analyzeWithModel(buffer: Buffer, mimeType = 'application/octet-stream', logicalModel: LogicalModel) {
   if (!ENDPOINT || !KEY) throw new OcrProviderError('[Azure OCR] not configured');
   const url = buildModelUrl(logicalModel);
 
@@ -62,8 +53,7 @@ async function analyzeWithModel(
   }
 
   const operationLocation = res.headers.get('operation-location');
-  if (!operationLocation)
-    throw new OcrProviderError('[Azure OCR] missing operation-location header');
+  if (!operationLocation) throw new OcrProviderError('[Azure OCR] missing operation-location header');
   // Only ever send the subscription key back to the configured endpoint.
   if (new URL(operationLocation).origin !== new URL(ENDPOINT).origin)
     throw new OcrProviderError('[Azure OCR] unexpected operation-location origin');
@@ -84,8 +74,7 @@ async function analyzeWithModel(
     }
     const j = await r2.json();
     if (j.status === 'succeeded') return j;
-    if (j.status === 'failed')
-      throw new OcrProviderError('[Azure OCR] analyze failed');
+    if (j.status === 'failed') throw new OcrProviderError('[Azure OCR] analyze failed');
   }
   throw new OcrProviderError('[Azure OCR] analyze timed out', 504);
 }
@@ -101,8 +90,7 @@ function asNumber(v: any): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-const isNum = (x: any): x is number =>
-  typeof x === 'number' && Number.isFinite(x);
+const isNum = (x: any): x is number => typeof x === 'number' && Number.isFinite(x);
 
 const sumArray = (arr: Array<number | undefined>): number | undefined => {
   const xs = arr.filter(isNum) as number[];
@@ -111,9 +99,7 @@ const sumArray = (arr: Array<number | undefined>): number | undefined => {
 
 function normDate(s?: string): string | undefined {
   if (!s) return;
-  const m = s.match(
-    /(20\d{2})[-\/\.](0?[1-9]|1[0-2])[-\/\.](0?[1-9]|[12]\d|3[01])/,
-  );
+  const m = s.match(/(20\d{2})[-\/\.](0?[1-9]|1[0-2])[-\/\.](0?[1-9]|[12]\d|3[01])/);
   if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
   return s;
 }
@@ -132,17 +118,11 @@ function parseReceiptDoc(result: any): OcrResult {
   const doc = result?.analyzeResult?.documents?.[0];
   const fields = doc?.fields || {};
 
-  const merchant =
-    fields.MerchantName?.valueString || fields.MerchantName?.content;
-  const dateRaw =
-    fields.TransactionDate?.valueDate || fields.TransactionDate?.content;
+  const merchant = fields.MerchantName?.valueString || fields.MerchantName?.content;
+  const dateRaw = fields.TransactionDate?.valueDate || fields.TransactionDate?.content;
 
-  const total = asNumber(
-    fields.Total?.valueNumber ?? fields.Total?.content,
-  );
-  const subtotal = asNumber(
-    fields.Subtotal?.valueNumber ?? fields.Subtotal?.content,
-  );
+  const total = asNumber(fields.Total?.valueNumber ?? fields.Total?.content);
+  const subtotal = asNumber(fields.Subtotal?.valueNumber ?? fields.Subtotal?.content);
   const tax = asNumber(fields.Tax?.valueNumber ?? fields.Tax?.content);
 
   const items: Array<{
@@ -157,26 +137,15 @@ function parseReceiptDoc(result: any): OcrResult {
     const f = it.valueObject || {};
     items.push({
       name: f.Description?.valueString || f.Description?.content,
-      qty: asNumber(
-        f.Quantity?.valueNumber ?? f.Quantity?.content,
-      ),
-      price: asNumber(
-        f.UnitPrice?.valueNumber ?? f.UnitPrice?.content,
-      ),
-      total: asNumber(
-        f.TotalPrice?.valueNumber ?? f.TotalPrice?.content,
-      ),
+      qty: asNumber(f.Quantity?.valueNumber ?? f.Quantity?.content),
+      price: asNumber(f.UnitPrice?.valueNumber ?? f.UnitPrice?.content),
+      total: asNumber(f.TotalPrice?.valueNumber ?? f.TotalPrice?.content),
     });
   }
 
   const sumItemTotals = sumArray(items.map((i) => i.total));
   // 税込金額の推定（Total 優先）
-  const grossAmount =
-    total ??
-    (isNum(subtotal) && isNum(tax)
-      ? subtotal + tax
-      : undefined) ??
-    sumItemTotals;
+  const grossAmount = total ?? (isNum(subtotal) && isNum(tax) ? subtotal + tax : undefined) ?? sumItemTotals;
 
   return {
     ocrText: buildOcrText(result),
@@ -196,27 +165,18 @@ function parseInvoiceDoc(result: any): OcrResult {
   const doc = result?.analyzeResult?.documents?.[0];
   const fields = doc?.fields || {};
 
-  const vendor =
-    fields.VendorName?.valueString || fields.VendorName?.content;
+  const vendor = fields.VendorName?.valueString || fields.VendorName?.content;
 
-  const dateRaw =
-    fields.InvoiceDate?.valueDate || fields.InvoiceDate?.content;
+  const dateRaw = fields.InvoiceDate?.valueDate || fields.InvoiceDate?.content;
 
   // InvoiceTotal は currency 型が多い
   const invoiceTotalCurrency = fields.InvoiceTotal?.valueCurrency;
   const invoiceTotal =
     asNumber(invoiceTotalCurrency?.amount) ||
-    asNumber(
-      fields.InvoiceTotal?.valueNumber ??
-        fields.InvoiceTotal?.content,
-    );
+    asNumber(fields.InvoiceTotal?.valueNumber ?? fields.InvoiceTotal?.content);
 
-  const subTotal = asNumber(
-    fields.SubTotal?.valueNumber ?? fields.SubTotal?.content,
-  );
-  const totalTax = asNumber(
-    fields.TotalTax?.valueNumber ?? fields.TotalTax?.content,
-  );
+  const subTotal = asNumber(fields.SubTotal?.valueNumber ?? fields.SubTotal?.content);
+  const totalTax = asNumber(fields.TotalTax?.valueNumber ?? fields.TotalTax?.content);
 
   const items: Array<{
     name?: string;
@@ -230,30 +190,20 @@ function parseInvoiceDoc(result: any): OcrResult {
     const f = it.valueObject || {};
     const unitPriceCurrency = f.UnitPrice?.valueCurrency;
 
-    const unitPrice =
-      asNumber(unitPriceCurrency?.amount) ||
-      asNumber(
-        f.UnitPrice?.valueNumber ?? f.UnitPrice?.content,
-      );
+    const unitPrice = asNumber(unitPriceCurrency?.amount) || asNumber(f.UnitPrice?.valueNumber ?? f.UnitPrice?.content);
 
     const amountCurrency = f.Amount?.valueCurrency;
     const totalPriceCurrency = f.TotalPrice?.valueCurrency;
 
     const lineTotal =
       asNumber(amountCurrency?.amount) ||
-      asNumber(
-        f.Amount?.valueNumber ?? f.Amount?.content,
-      ) ||
+      asNumber(f.Amount?.valueNumber ?? f.Amount?.content) ||
       asNumber(totalPriceCurrency?.amount) ||
-      asNumber(
-        f.TotalPrice?.valueNumber ?? f.TotalPrice?.content,
-      );
+      asNumber(f.TotalPrice?.valueNumber ?? f.TotalPrice?.content);
 
     items.push({
       name: f.Description?.valueString || f.Description?.content,
-      qty: asNumber(
-        f.Quantity?.valueNumber ?? f.Quantity?.content,
-      ),
+      qty: asNumber(f.Quantity?.valueNumber ?? f.Quantity?.content),
       price: unitPrice,
       total: lineTotal,
     });
@@ -294,10 +244,7 @@ function parseInvoiceDoc(result: any): OcrResult {
 
 export default class AzureReceiptProvider implements OcrProvider {
   // 旧インターフェース互換（レシート前提）
-  async parseReceiptFromBuffer(
-    buffer: Buffer,
-    mimeType = 'application/octet-stream',
-  ): Promise<OcrResult> {
+  async parseReceiptFromBuffer(buffer: Buffer, mimeType = 'application/octet-stream'): Promise<OcrResult> {
     return this.parseFromBuffer(buffer, mimeType, 'receipt');
   }
 

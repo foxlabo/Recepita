@@ -26,7 +26,10 @@ const updateSchema = z.object({
 });
 
 const bodySchema = z.object({
-  updates: z.array(updateSchema).min(1, '更新対象が選択されていません。').max(500, '一度に更新できる件数を超えています。'),
+  updates: z
+    .array(updateSchema)
+    .min(1, '更新対象が選択されていません。')
+    .max(500, '一度に更新できる件数を超えています。'),
 });
 
 export const POST = withAuth(async (req, { session }) => {

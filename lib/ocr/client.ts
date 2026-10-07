@@ -16,7 +16,10 @@ const MAX_RETRY_WAIT_MS = 60_000;
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export class OcrRequestError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
     super(message);
     this.name = 'OcrRequestError';
   }

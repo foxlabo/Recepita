@@ -135,7 +135,14 @@ export function baseKeyOf(name: string): string {
 /** Response of /api/ocr (or a failure) → OcrPage. */
 export function toOcrPage(fileName: string, result: { raw: unknown } | { error: string }): OcrPage {
   if ('error' in result) {
-    return { key: fileName, groupKey: baseKeyOf(fileName), raw: { error: result.error }, text: '', detected: {}, ai: {} };
+    return {
+      key: fileName,
+      groupKey: baseKeyOf(fileName),
+      raw: { error: result.error },
+      text: '',
+      detected: {},
+      ai: {},
+    };
   }
   const p = unwrapOcrResponse(result.raw);
   return {
@@ -170,7 +177,9 @@ export function mapPerPage(page: OcrPage): OcrDraftRow {
     firstItemAmt = toNum(it?.total ?? it?.amount ?? it?.price ?? it?.unitPrice);
   }
   const sumItems = sumArray(
-    (Array.isArray(d.items) ? d.items : []).map((it: any) => toNum(it?.total ?? it?.amount ?? it?.price ?? it?.unitPrice)),
+    (Array.isArray(d.items) ? d.items : []).map((it: any) =>
+      toNum(it?.total ?? it?.amount ?? it?.price ?? it?.unitPrice),
+    ),
   );
 
   // --- テキストから subtotal / tax / gross を推定 ---

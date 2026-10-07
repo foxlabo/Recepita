@@ -41,7 +41,10 @@ export function parseYen(raw: unknown): number | undefined {
 export function parseAmountInput(raw: unknown): number | undefined {
   if (typeof raw === 'number') return Number.isFinite(raw) ? raw : undefined;
   if (typeof raw !== 'string') return undefined;
-  const s = raw.normalize('NFKC').replace(/[,\s¥円]/g, '').replace(/^[−▲△]/, '-');
+  const s = raw
+    .normalize('NFKC')
+    .replace(/[,\s¥円]/g, '')
+    .replace(/^[−▲△]/, '-');
   if (!/^[-+]?\d+(?:\.\d+)?$/.test(s)) return undefined;
   const n = Number(s);
   return Number.isFinite(n) ? n : undefined;
@@ -57,7 +60,7 @@ export function parseItemsText(text: string | null | undefined): ItemLine[] {
     .map((p) => {
       const m = p.match(/^(.*)[:：=]([^:：=]*)$/);
       const name = (m ? m[1] : p).trim();
-      const amount = m ? parseYen(m[2]) ?? 0 : 0;
+      const amount = m ? (parseYen(m[2]) ?? 0) : 0;
       return { name: (name || '不明').slice(0, 500), amount };
     });
 }
@@ -67,7 +70,9 @@ export function formatItemsText(lines: ReadonlyArray<{ name?: string | null; amo
   return lines
     .map((l) => {
       // 区切り文字を名前から除き、parseItemsText で元に戻せるようにする
-      const name = String(l.name ?? '').replace(/\s*[\r\n,、]+\s*/g, ' ').trim();
+      const name = String(l.name ?? '')
+        .replace(/\s*[\r\n,、]+\s*/g, ' ')
+        .trim();
       if (!name) return '';
       return l.amount ? `${name}:${l.amount}` : name;
     })
