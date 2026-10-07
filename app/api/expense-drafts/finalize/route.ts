@@ -1,38 +1,41 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth-server';
+import { jsonError, withAuth } from '@/lib/auth-server';
+import { readJson } from '@/lib/http';
+import { idSchema } from '@/lib/validation';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const bodySchema = z.object({ ids: z.array(idSchema).max(1000).optional() });
+
 // POST /api/expense-drafts/finalize
-// finalize={ids?: string[]} 省略時は全件
-export async function POST(req: Request) {
-  const s = await getSession();
-  if (!s) return NextResponse.json({ ok: false }, { status: 401 });
-  const body = await req.json().catch(()=>({} as any));
-  const ids: string[] | undefined = body?.ids;
+// body={ids?: string[]} 省略時は全件
+export const POST = withAuth(async (req, { session }) => {
+  const { ids } = await readJson(req, bodySchema);
 
   const drafts = await prisma.draftExpense.findMany({
-    where: { userId: s.userId, ...(ids && ids.length ? { id: { in: ids } } : {}) },
-    orderBy: { createdAt: 'asc' }
+    where: { userId: session.userId, ...(ids && ids.length ? { id: { in: ids } } : {}) },
+    orderBy: { createdAt: 'asc' },
   });
-  if (drafts.length === 0) return NextResponse.json({ ok: false, message: 'no drafts' }, { status: 400 });
+  if (drafts.length === 0) return jsonError(400, '下書きがありません。');
 
-  // Insert one by one to reuse existing structure; itemsSummary -> parse on server if needed (here keep in memo/items)
   for (const d of drafts) {
     await prisma.expense.create({
       data: {
-        userId: s.userId,
+        userId: session.userId,
         date: d.tradeDate,
         amount: d.amount,
         vendor: d.vendor,
         memo: d.memo,
         category: d.category,
         // items は必要に応じて itemsSummary を解析して作る。まずはメモ/サマリのみ。
-      }
+      },
     });
   }
-  // delete drafts
-  await prisma.draftExpense.deleteMany({ where: { id: { in: drafts.map(x => x.id) }, userId: s.userId } });
+  await prisma.draftExpense.deleteMany({
+    where: { id: { in: drafts.map((x) => x.id) }, userId: session.userId },
+  });
   return NextResponse.json({ ok: true, created: drafts.length });
-}
+});

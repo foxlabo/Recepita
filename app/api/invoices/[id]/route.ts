@@ -1,23 +1,14 @@
 // app/api/invoices/[id]/route.ts
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth-server'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { jsonError, withAuth } from '@/lib/auth-server';
 
-export const runtime = 'nodejs'
-type Ctx = { params: Promise<{ id: string }> }
+export const runtime = 'nodejs';
 
-// ★ これだけでOK（GET/POSTは消す）
-export async function DELETE(_req: Request, props: Ctx) {
-  const params = await props.params;
-  const s = await getSession()
-  if (!s) return NextResponse.json({ error: 'auth' }, { status: 401 })
-
-  // 子テーブルがあれば先に削除（なければ不要）
-  // await prisma.invoiceItem.deleteMany({ where: { invoiceId: params.id, userId: s.userId } })
-
+export const DELETE = withAuth<{ id: string }>(async (_req, { session, params }) => {
   const r = await prisma.invoice.deleteMany({
-    where: { id: params.id, userId: s.userId },
-  })
-  if (r.count === 0) return NextResponse.json({ error: 'not found' }, { status: 404 })
-  return NextResponse.json({ ok: true })
-}
+    where: { id: params.id, userId: session.userId },
+  });
+  if (r.count === 0) return jsonError(404, 'not_found');
+  return NextResponse.json({ ok: true });
+});

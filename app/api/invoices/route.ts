@@ -1,6 +1,11 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth-server';
+import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import { jsonError, withAuth } from '@/lib/auth-server';
+import { readJson } from '@/lib/http';
+import { idSchema, int32Schema } from '@/lib/validation';
+
+export const runtime = 'nodejs';
 
 // ============ 日付文字列 → Date 変換ユーティリティ ============
 function normalizeIssueDate(input: unknown): Date | null {
@@ -24,49 +29,36 @@ function normalizeIssueDate(input: unknown): Date | null {
 }
 
 // ============ 一覧取得 ============
-export async function GET() {
-  const s = await getSession();
-  if (!s) return NextResponse.json([], { status: 200 });
-
+export const GET = withAuth(async (_req, { session }) => {
   const rows = await prisma.invoice.findMany({
-    where: { userId: s.userId },
+    where: { userId: session.userId },
     orderBy: { createdAt: 'desc' },
   });
-
   return NextResponse.json(rows);
-}
+});
+
+const createSchema = z.object({
+  client: z.string({ error: '宛先を入力してください。' }).trim().min(1, '宛先を入力してください。').max(500),
+  amount: int32Schema,
+  issueDate: z.string({ error: '日付が正しくありません。' }).max(64),
+});
 
 // ============ 追加 ============
-export async function POST(req: Request) {
-  const s = await getSession();
-  if (!s) return NextResponse.json({ error: 'auth' }, { status: 401 });
-
-  const { client, amount, issueDate } = await req.json();
+export const POST = withAuth(async (req, { session }) => {
+  const { client, amount, issueDate } = await readJson(req, createSchema);
   const parsed = normalizeIssueDate(issueDate);
-  if (!parsed) return NextResponse.json({ error: 'Invalid issueDate' }, { status: 400 });
+  if (!parsed) return jsonError(400, '日付が正しくありません。');
 
   const row = await prisma.invoice.create({
-    data: { userId: s.userId, client, amount, issueDate: parsed },
+    data: { userId: session.userId, client, amount, issueDate: parsed },
   });
-
   return NextResponse.json(row);
-}
+});
 
 // ============ 1件削除 ============
-export async function DELETE(req: Request) {
-  const s = await getSession();
-  if (!s) return NextResponse.json({ error: 'auth' }, { status: 401 });
-
-  const { id } = await req.json();
-  if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 });
-
-  const r = await prisma.invoice.deleteMany({
-    where: { id, userId: s.userId },
-  });
-
-  if (r.count === 0) {
-    return NextResponse.json({ error: 'not found' }, { status: 404 });
-  }
-
+export const DELETE = withAuth(async (req, { session }) => {
+  const { id } = await readJson(req, z.object({ id: idSchema }));
+  const r = await prisma.invoice.deleteMany({ where: { id, userId: session.userId } });
+  if (r.count === 0) return jsonError(404, 'not_found');
   return NextResponse.json({ ok: true });
-}
+});

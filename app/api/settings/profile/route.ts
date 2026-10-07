@@ -1,13 +1,40 @@
 // app/api/settings/profile/route.ts
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth-server';
+import { readJson } from '@/lib/http';
+import { optionalText } from '@/lib/validation';
 
-function toDateOrNull(v: any): Date | null {
+export const runtime = 'nodejs';
+
+function toDateOrNull(v: string | null | undefined): Date | null {
   if (!v) return null;
   const d = new Date(v);
   return isNaN(d.getTime()) ? null : d;
 }
+
+const text = optionalText(200);
+// 画面は GET の結果（id/userId/createdAt 等を含む）をそのまま送るため、
+// 既知の項目だけを取り出し、それ以外は無視する。
+const profileSchema = z.object({
+  lastName: text,
+  firstName: text,
+  lastNameKana: text,
+  firstNameKana: text,
+  birthDate: optionalText(64),
+  gender: optionalText(200),
+  phone: optionalText(200),
+  postalCode: optionalText(200),
+  prefecture: text,
+  city: text,
+  address1: text,
+  address2: text,
+  businessName: text,
+  startDate: optionalText(64),
+  occupation: text,
+  invoiceNo: optionalText(200),
+});
 
 // GET: プロフィール取得
 export const GET = withAuth(async (_req, { session }) => {
@@ -21,7 +48,7 @@ export const GET = withAuth(async (_req, { session }) => {
 // PUT: プロフィール更新（なければ作成）
 export const PUT = withAuth(async (req, { session }) => {
   const userId = session.userId;
-  const body = await req.json();
+  const body = await readJson(req, profileSchema);
 
   const data = {
     lastName:       body.lastName ?? null,

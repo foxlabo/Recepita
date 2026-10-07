@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { getSession } from '@/lib/auth-server'
+import { withAuth } from '@/lib/auth-server'
 
 type ExpenseType = Awaited<ReturnType<typeof prisma.expense.findMany>>[number]
 type InvoiceType = Awaited<ReturnType<typeof prisma.invoice.findMany>>[number]
@@ -15,10 +15,8 @@ function toYMD(input: Date | string): string {
   return d.toISOString().slice(0, 10)
 }
 
-export async function GET(req: Request) {
-  // ▼ 認証（userId 取得）
-  const s = await getSession()
-  if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 })
+export const GET = withAuth(async (req, { session: s }) => {
+  // ▼ 認証は withAuth で実施済み（未ログインは 401）
   const userFilter = { userId: s.userId }
 
   const { searchParams } = new URL(req.url)
@@ -154,4 +152,4 @@ export async function GET(req: Request) {
     },
     alerts,
   })
-}
+})
