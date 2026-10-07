@@ -10,14 +10,14 @@ Recepita is a portfolio project for solo business owners and freelancers to mana
 - Receipt and invoice OCR with Azure Document Intelligence
 - Optional AI-based expense category suggestion with OpenAI
 - Email verification and account settings
-- CSV export for expenses and invoices
+- CSV export of expenses
 
 ## Tech Stack
 
-- Next.js 14 (App Router)
-- React 18
+- Next.js 16 (App Router)
+- React 19
 - TypeScript
-- Prisma
+- Prisma 7 (`@prisma/adapter-pg`)
 - PostgreSQL
 - Azure Document Intelligence
 - Azure Communication Services
@@ -27,7 +27,7 @@ Recepita is a portfolio project for solo business owners and freelancers to mana
 
 ### 1. Requirements
 
-- Node.js 20.x
+- Node.js 22.x
 - npm
 - PostgreSQL
 
@@ -49,8 +49,6 @@ At minimum, set:
 
 - `DATABASE_URL`
 - `JWT_SECRET`
-- `NEXTAUTH_URL`
-- `NEXT_PUBLIC_APP_URL`
 - `APP_URL`
 
 ### 4. Apply Prisma migrations
@@ -76,35 +74,24 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment Variables
 
-### Required for minimum local run
+### Required
 
 - `DATABASE_URL`: PostgreSQL connection string
-- `JWT_SECRET`: session signing secret
-- `NEXTAUTH_URL`: base URL used in email links
-- `NEXT_PUBLIC_APP_URL`: public app URL
-- `APP_URL`: server-side base URL fallback
+- `JWT_SECRET`: session JWT signing secret (HS256, use 32+ random characters)
+- `APP_URL`: public base URL used to build links in e-mails (must be set in production)
+- `AZURE_COMMUNICATION_CONNECTION_STRING`, `AZURE_COMMUNICATION_SENDER`: e-mail delivery (required in production)
 
 ### Optional
 
-- `STORAGE_LOCAL_DIR`, `UPLOAD_DIR`, `FILE_STORAGE_DIR`: local file storage paths
-- `OCR_PROVIDER`, `AZURE_DOCUMENT_INTELLIGENCE_*`: OCR integration
+- `OCR_PROVIDER=azure`, `AZURE_DOCUMENT_INTELLIGENCE_*`: OCR integration
 - `OPENAI_API_KEY`, `OPENAI_OCR_CATEGORY_MODEL`: AI category suggestion
-- `AZURE_COMMUNICATION_*`: email verification delivery
-- `SMTP_*`: alternate mail transport settings used by part of the codebase
+- `SHOW_DEV_VERIFICATION_LINK=1`: development only; also return the verification link in API responses
 
 ## Local Demo Notes
 
-Without Azure Communication Services mail settings, sign-up will fail because verification mail delivery is required. For local evaluation, create a user manually or mark a local user as verified before logging in.
+Without Azure Communication Services mail settings, development builds (`npm run dev`) print verification and e-mail-change messages, including their links, to the server console instead of sending them, so sign-up can be completed locally. Set `SHOW_DEV_VERIFICATION_LINK=1` to also show the link on the sign-up screen. Production builds require ACS.
 
-One simple option is Prisma Studio:
-
-```bash
-npx prisma studio
-```
-
-Then update the `User.isEmailVerified` field to `true` for your test account.
-
-Without Azure OCR settings, the app still runs, but OCR upload endpoints will return a configuration error until:
+Without Azure OCR settings, the app still runs, but the OCR endpoint returns a configuration error until:
 
 - `OCR_PROVIDER=azure`
 - `AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT`
