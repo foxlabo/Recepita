@@ -65,7 +65,7 @@ export function parseItemsText(text: string | null | undefined): ItemLine[] {
     });
 }
 
-/** Item lines → "name:amount, …" (an amount of 0 is omitted). */
+/** Item lines → "name:amount, …" (an amount of 0 is omitted unless the name contains a separator). */
 export function formatItemsText(lines: ReadonlyArray<{ name?: string | null; amount?: number | null }>): string {
   return lines
     .map((l) => {
@@ -74,7 +74,10 @@ export function formatItemsText(lines: ReadonlyArray<{ name?: string | null; amo
         .replace(/\s*[\r\n,、]+\s*/g, ' ')
         .trim();
       if (!name) return '';
-      return l.amount ? `${name}:${l.amount}` : name;
+      // ":0" is kept when the name itself contains a separator ("Type:C"),
+      // otherwise parseItemsText would split the name.
+      if (!l.amount) return /[:：=]/.test(name) ? `${name}:0` : name;
+      return `${name}:${l.amount}`;
     })
     .filter(Boolean)
     .join(', ');
