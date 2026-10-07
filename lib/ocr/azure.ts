@@ -99,7 +99,9 @@ const sumArray = (arr: Array<number | undefined>): number | undefined => {
 
 function normDate(s?: string): string | undefined {
   if (!s) return;
-  const m = s.match(/(20\d{2})[-/.](0?[1-9]|1[0-2])[-/.](0?[1-9]|[12]\d|3[01])/);
+  // Two-digit alternatives first and no digit after the day: with "0?[1-9]"
+  // first, "2026-09-30" used to match the day as "3".
+  const m = s.match(/(20\d{2})[-/.](1[0-2]|0?[1-9])[-/.](3[01]|[12]\d|0?[1-9])(?!\d)/);
   if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
   return s;
 }
