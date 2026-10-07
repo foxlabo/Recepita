@@ -57,7 +57,9 @@ export async function hit(rule: RateLimitRule, identifier: string): Promise<Rate
 
   const row = rows[0];
   const count = Number(row.count);
-  const elapsedMs = new Date(row.now).getTime() - new Date(row.windowStart).getTime();
+  // windowStart is stored as TIMESTAMP(3), i.e. rounded to the millisecond (up
+  // to 0.5 ms into the future), while now() has microseconds: clamp at 0.
+  const elapsedMs = Math.max(0, new Date(row.now).getTime() - new Date(row.windowStart).getTime());
   const retryAfterSec = Math.max(1, Math.ceil((windowSec * 1000 - elapsedMs) / 1000));
   return { allowed: count <= rule.limit, count, retryAfterSec };
 }
