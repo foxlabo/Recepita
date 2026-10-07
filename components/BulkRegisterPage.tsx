@@ -50,7 +50,7 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
   useEffect(() => {
     return () => {
       try {
-        previews.forEach((p) => p.url && URL.revokeObjectURL(p.url));
+        for (const p of previews) if (p.url) URL.revokeObjectURL(p.url);
       } catch {}
     };
   }, [previews]);
@@ -141,12 +141,8 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
   return (
     <Card>
       <CardContent className="p-6" onDrop={onDrop} onDragOver={onDragOver} onDragEnter={onDragOver}>
-        <div
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onDragEnter={onDragOver}
-          className="border-2 border-dashed border-(--border) rounded-xl p-8 text-center text-sm text-(--muted)"
-        >
+        {/* drops here bubble up to CardContent's handlers */}
+        <div className="border-2 border-dashed border-(--border) rounded-xl p-8 text-center text-sm text-(--muted)">
           ここにファイルをドラッグ&ドロップ（複数可）／PDFも可（複数ページPDFは自動でページ分割）
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <input ref={inputRef} type="file" multiple onChange={onPick} />
@@ -198,6 +194,7 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
                   className="relative border rounded-lg p-2 pr-8 flex items-center gap-2 bg-(--card) shadow-xs"
                 >
                   {p.url ? (
+                    // biome-ignore lint/performance/noImgElement: local blob: preview of a picked file; next/image cannot optimise it
                     <img src={p.url} alt="" className="w-10 h-10 object-cover rounded-sm" />
                   ) : (
                     <div className="w-10 h-10 rounded-sm bg-(--muted-bg) grid place-items-center text-lg">📄</div>

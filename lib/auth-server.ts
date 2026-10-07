@@ -88,7 +88,7 @@ type RouteCtx<P> = { params: Promise<P> };
  * `{ error: 'unauthorized' }` otherwise) and turns thrown errors into safe
  * JSON responses.
  */
-export function withAuth<P extends Record<string, string | string[]> = {}>(
+export function withAuth<P extends Record<string, string | string[]> = Record<string, never>>(
   handler: (req: NextRequest, ctx: { session: Session; params: P }) => Promise<Response> | Response,
 ) {
   return async (req: NextRequest, ctx: RouteCtx<P>): Promise<Response> => {

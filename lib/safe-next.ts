@@ -10,6 +10,7 @@ export function safeNextPath(raw: string | null | undefined, fallback = '/dashbo
   if (!raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return fallback;
   // Backslashes and control characters anywhere (browsers drop tab/CR/LF,
   // which would turn "/<TAB>/evil" into "//evil").
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: rejecting control characters is the point
   if (/[\\\u0000-\u001f\u007f]/.test(raw)) return fallback;
   try {
     const url = new URL(raw, BASE);

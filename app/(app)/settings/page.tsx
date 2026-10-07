@@ -73,7 +73,7 @@ export default function Settings() {
             ['profile', 'マイページ'],
           ] as const
         ).map(([k, label]) => (
-          <Button key={k} variant={tab === k ? 'primary' : 'outline'} size="md" onClick={() => setTab(k as any)}>
+          <Button key={k} variant={tab === k ? 'primary' : 'outline'} size="md" onClick={() => setTab(k)}>
             {label}
           </Button>
         ))}
@@ -262,7 +262,7 @@ export default function Settings() {
                         }
                         alert('アカウントを削除しました。ご利用ありがとうございました。');
                         location.href = '/login?deleted=1';
-                      } catch (e) {
+                      } catch {
                         alert('削除に失敗しました。時間をおいてお試しください。');
                       } finally {
                         setDeleteLoading(false);

@@ -242,7 +242,7 @@ export function mapAggregate(pages: OcrPage[]): OcrDraftRow {
     .filter((x): x is string => !!x);
   const vendor = vendors[0] ?? '';
 
-  const allItems = pages.flatMap((p) => (Array.isArray(p.detected?.items) ? p.detected!.items : []));
+  const allItems = pages.flatMap((p) => (Array.isArray(p.detected?.items) ? p.detected.items : []));
   const sumItemTotals =
     sumArray(allItems.map((it: any) => toNum(it?.total ?? it?.amount ?? it?.price ?? it?.unitPrice))) ?? 0;
 

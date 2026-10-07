@@ -1,6 +1,6 @@
 // app/(app)/invoices/page.tsx
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
@@ -23,7 +23,7 @@ export default function Invoices() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     const res = await fetch('/api/invoices', { cache: 'no-store' });
     // セッション失効時は API が 401 を返す → Cookie を整理してログイン画面へ
     if (redirectIfUnauthorized(res)) return;
@@ -33,10 +33,10 @@ export default function Invoices() {
     }
     const data = await res.json().catch(() => []);
     setList(Array.isArray(data) ? data : []);
-  }
+  }, []);
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   async function add() {
     if (!form.client.trim() || !form.amount.trim()) {

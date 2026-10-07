@@ -50,13 +50,38 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": {
+        // New code must not use `any` (recommended only warns).
+        "noExplicitAny": "error"
+      }
     }
   },
+  "overrides": [
+    {
+      // Legacy OCR / AI glue that walks untyped provider JSON (Azure Document
+      // Intelligence, OpenAI). Typing those payloads is a refactor of its own;
+      // until then `any` is reported as a warning there.
+      "includes": [
+        "lib/ocr/azure.ts",
+        "lib/ocr/extract.ts",
+        "lib/ai/expenseCategory.ts",
+        "app/api/ocr/route.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "warn"
+          }
+        }
+      }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": {
       "source": {
+        // Off for now: sorting imports would touch almost every file.
         "organizeImports": "off"
       }
     }

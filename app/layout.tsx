@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ja" suppressHydrationWarning>
       <head>
         {/* テーマを描画前に適用（ライト→ダークのちらつき防止） */}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: constant script from lib/theme.ts, no user input */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>{children}</body>

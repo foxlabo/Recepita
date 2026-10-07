@@ -97,7 +97,7 @@ export function assertFound(count: number): void {
 type RouteCtx<P> = { params: Promise<P> };
 
 /** Wrap a public route handler with consistent error handling. */
-export function withErrors<P extends Record<string, string | string[]> = {}>(
+export function withErrors<P extends Record<string, string | string[]> = Record<string, never>>(
   handler: (req: NextRequest, ctx: { params: P }) => Promise<Response> | Response,
 ) {
   return async (req: NextRequest, ctx: RouteCtx<P>): Promise<Response> => {
