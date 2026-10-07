@@ -135,7 +135,7 @@ export default function Signup() {
               <p className="text-xs text-(--muted)">8文字以上で入力してください。</p>
             </div>
 
-            <Button className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? '登録中...' : '登録'}
             </Button>
 

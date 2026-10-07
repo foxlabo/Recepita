@@ -527,10 +527,10 @@ export default function ReceiptsList() {
             <div className="text-sm text-(--muted)">{loading ? '読込中…' : ''}</div>
             <nav className="flex items-center gap-2" aria-label="ページ">
               {/* 先頭 / 前へ */}
-              <button onClick={() => setPage(1)} disabled={page === 1} className={pagerButton}>
+              <button type="button" onClick={() => setPage(1)} disabled={page === 1} className={pagerButton}>
                 « 最初
               </button>
-              <button onClick={() => setPage(page - 1)} disabled={page === 1} className={pagerButton}>
+              <button type="button" onClick={() => setPage(page - 1)} disabled={page === 1} className={pagerButton}>
                 ‹ 前
               </button>
 
@@ -540,6 +540,7 @@ export default function ReceiptsList() {
               {/* 中央のページ群（現在のページを強調） */}
               {pages.map((p) => (
                 <button
+                  type="button"
                   key={p}
                   onClick={() => setPage(p)}
                   aria-current={p === page ? 'page' : undefined}
@@ -556,10 +557,20 @@ export default function ReceiptsList() {
               {pages[pages.length - 1] < totalPages && <span className="px-1 text-(--muted)">…</span>}
 
               {/* 次へ / 末尾 */}
-              <button onClick={() => setPage(page + 1)} disabled={page === totalPages} className={pagerButton}>
+              <button
+                type="button"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+                className={pagerButton}
+              >
                 次 ›
               </button>
-              <button onClick={() => setPage(totalPages)} disabled={page === totalPages} className={pagerButton}>
+              <button
+                type="button"
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                className={pagerButton}
+              >
                 最後 »
               </button>
             </nav>

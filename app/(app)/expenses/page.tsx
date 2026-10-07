@@ -316,10 +316,10 @@ export default function Expenses() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">経費</h2>
       <div className="flex items-center gap-2 border-b pb-2 mt-2">
-        <button className={tabClass(active === 'single')} onClick={() => setActive('single')}>
+        <button type="button" className={tabClass(active === 'single')} onClick={() => setActive('single')}>
           個別登録
         </button>
-        <button className={tabClass(active === 'bulk')} onClick={() => setActive('bulk')}>
+        <button type="button" className={tabClass(active === 'bulk')} onClick={() => setActive('bulk')}>
           一括登録
         </button>
       </div>

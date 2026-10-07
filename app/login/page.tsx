@@ -134,7 +134,7 @@ function LoginForm() {
               />
             </div>
 
-            <Button className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'ログイン中…' : 'ログイン'}
             </Button>
 

@@ -10,6 +10,7 @@ export default function UserMenu({ email }: { email?: string }) {
       <div className="text-sm text-(--muted) hidden sm:block">{email || 'user'}</div>
       <ThemeToggle />
       <button
+        type="button"
         onClick={doLogout}
         className="rounded-md border border-(--border) bg-(--card) px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-[#101a16]"
       >

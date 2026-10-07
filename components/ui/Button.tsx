@@ -1,14 +1,26 @@
 'use client';
+import { type ButtonHTMLAttributes, cloneElement, type ReactElement } from 'react';
 import { cn } from '@/lib/cn';
-import React from 'react';
 
-type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   asChild?: boolean;
 };
 
-export default function Button({ className, variant = 'primary', size = 'md', asChild, ...rest }: Props) {
+/**
+ * `type` defaults to "button" instead of the HTML default "submit", so a
+ * Button inside a <form> never submits it by accident. Submit buttons pass
+ * type="submit" explicitly.
+ */
+export default function Button({
+  className,
+  variant = 'primary',
+  size = 'md',
+  asChild,
+  type = 'button',
+  ...rest
+}: Props) {
   const base = 'inline-flex items-center justify-center font-medium rounded-md transition-colors';
   const styles = {
     primary: 'bg-recepita hover:bg-recepita-dark text-white',
@@ -22,10 +34,12 @@ export default function Button({ className, variant = 'primary', size = 'md', as
   }[size];
 
   if (asChild) {
-    // naive asChild: expect child anchor
-    // @ts-ignore
+    // naive asChild: the single child element (e.g. an <a>) gets the styles
     const { children, ...props } = rest;
-    return React.cloneElement(children as any, { className: cn(base, styles, sizes, className), ...props });
+    return cloneElement(children as ReactElement<Record<string, unknown>>, {
+      className: cn(base, styles, sizes, className),
+      ...props,
+    });
   }
-  return <button className={cn(base, styles, sizes, className)} {...rest} />;
+  return <button type={type} className={cn(base, styles, sizes, className)} {...rest} />;
 }
