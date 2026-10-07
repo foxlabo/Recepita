@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth-server';
-import { readJson } from '@/lib/http';
+import { assertFound, readJson } from '@/lib/http';
 import { dateInputSchema, idSchema } from '@/lib/validation';
 import type { Prisma } from '@/lib/generated/prisma/client';
 
@@ -61,6 +61,7 @@ export const POST = withAuth(async (req, { session }) => {
       })
     ).map((x) => x.id),
   );
+  assertFound(owned.size); // 存在しない / 他人の経費のみ → 404
 
   let count = 0;
   for (const u of updates) {

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { jsonError, withAuth } from '@/lib/auth-server';
-import { readJson } from '@/lib/http';
+import { withAuth } from '@/lib/auth-server';
+import { assertFound, readJson } from '@/lib/http';
 import { dateOnlySchema, idSchema, int32Schema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -36,6 +36,6 @@ export const POST = withAuth(async (req, { session }) => {
 export const DELETE = withAuth(async (req, { session }) => {
   const { id } = await readJson(req, z.object({ id: idSchema }));
   const r = await prisma.invoice.deleteMany({ where: { id, userId: session.userId } });
-  if (r.count === 0) return jsonError(404, 'not_found');
+  assertFound(r.count);
   return NextResponse.json({ ok: true });
 });

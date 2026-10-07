@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { jsonError, withAuth } from '@/lib/auth-server';
-import { readJson } from '@/lib/http';
+import { MSG_NOT_FOUND, readJson } from '@/lib/http';
 import { dateInputSchema, int32Schema, optionalText } from '@/lib/validation';
 import type { Prisma } from '@/lib/generated/prisma/client';
 
@@ -14,13 +14,13 @@ export const GET = withAuth<{ id: string }>(async (_req, { session, params }) =>
     where: { id: params.id, userId: session.userId },
     include: { lineItems: true },
   });
-  if (!e) return jsonError(404, 'not_found');
+  if (!e) return jsonError(404, MSG_NOT_FOUND);
   return NextResponse.json(e);
 });
 
 const updateSchema = z.object({
   date: dateInputSchema,
-  amount: z.coerce.number().catch(0).pipe(int32Schema),
+  amount: z.coerce.number({ error: '金額は数値で入力してください。' }).pipe(int32Schema),
   vendor: z.string().max(500).nullish(),
   memo: optionalText(5000),
   category: optionalText(200),

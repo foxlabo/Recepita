@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth-server';
-import { readJson } from '@/lib/http';
+import { assertFound, readJson } from '@/lib/http';
 import { idListSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -20,9 +20,7 @@ export const POST = withAuth(async (req, { session }) => {
       select: { id: true },
     })
   ).map((x) => x.id);
-  if (myIds.length === 0) {
-    return NextResponse.json({ ok: true, deleted: 0 });
-  }
+  assertFound(myIds.length); // 存在しない / 他人の経費のみ → 404
 
   // 子 → 親 の順（ExpenseItem → Expense）
   const [, result] = await prisma.$transaction([
