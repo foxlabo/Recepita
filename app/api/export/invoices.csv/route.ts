@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth-server';
 
 function csvEscape(v: unknown): string {
