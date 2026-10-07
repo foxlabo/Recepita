@@ -1,125 +1,116 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/auth-server'
+import {
+  addMonths,
+  formatDateJST,
+  isValidYearMonth,
+  monthRangeJST,
+  yearMonthJST,
+  yearMonthKey,
+} from '@/lib/dates'
 
-type ExpenseType = Awaited<ReturnType<typeof prisma.expense.findMany>>[number]
-type InvoiceType = Awaited<ReturnType<typeof prisma.invoice.findMany>>[number]
+export const runtime = 'nodejs'
 
-function ymKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
+const TREND_MONTHS = 12
 
-// 表示用（安全に YYYY-MM-DD 化）
-function toYMD(input: Date | string): string {
-  const d = typeof input === 'string' ? new Date(input) : input
-  return d.toISOString().slice(0, 10)
-}
+/** Date → 'YYYY-MM-DD HH:MM:SS.mmm' (UTC) for comparing with TIMESTAMP(3) columns in raw SQL. */
+const sqlTimestamp = (d: Date) => d.toISOString().slice(0, 23).replace('T', ' ')
 
-export const GET = withAuth(async (req, { session: s }) => {
+type MonthlyRow = { kind: 'expense' | 'sales'; ym: string; total: bigint | number | null }
+
+export const GET = withAuth(async (req, { session }) => {
   // ▼ 認証は withAuth で実施済み（未ログインは 401）
-  const userFilter = { userId: s.userId }
+  const userId = session.userId
 
+  // 対象月（未指定・不正値は JST の今月）
   const { searchParams } = new URL(req.url)
-  const now = new Date()
-  const year  = Number(searchParams.get('year'))  || now.getFullYear()
-  const month = Number(searchParams.get('month')) || (now.getMonth() + 1)
+  const now = yearMonthJST()
+  const qYear = Number(searchParams.get('year'))
+  const qMonth = Number(searchParams.get('month'))
+  const { year, month } = isValidYearMonth(qYear, qMonth) ? { year: qYear, month: qMonth } : now
 
-  // 月の境界（Date）
-  const start = new Date(year, month - 1, 1)
-  const end   = new Date(year, month, 1)
-  // Prisma へ渡すのは ISO 文字列（どちらの型でもOK）
-  const startISO = start.toISOString()
-  const endISO   = end.toISOString()
+  // 12ヶ月分の月キー（古い順）と、その全期間（JST の月境界。lib/dates.ts 参照）
+  const months = Array.from({ length: TREND_MONTHS }, (_, i) => {
+    const ym = addMonths(year, month, i - (TREND_MONTHS - 1))
+    return yearMonthKey(ym.year, ym.month)
+  })
+  const first = addMonths(year, month, -(TREND_MONTHS - 1))
+  const from = monthRangeJST(first.year, first.month).start
+  const cur = monthRangeJST(year, month)
+  const to = cur.end
 
-  // ───────────────── 当月（userId で絞る）
-  const [expenses, invoices] = await Promise.all([
+  const [monthly, categories, recentExpenses, recentInvoices] = await Promise.all([
+    // 月別合計（経費・売上）を 1 クエリで。日時は UTC で保存されているので
+    // +9 時間して JST の年月で集計する。
+    prisma.$queryRaw<MonthlyRow[]>`
+      SELECT 'expense' AS kind, to_char("date" + interval '9 hours', 'YYYY-MM') AS ym, SUM("amount")::bigint AS total
+      FROM "Expense"
+      WHERE "userId" = ${userId}
+        AND "date" >= ${sqlTimestamp(from)}::timestamp AND "date" < ${sqlTimestamp(to)}::timestamp
+      GROUP BY 2
+      UNION ALL
+      SELECT 'sales' AS kind, to_char("issueDate" + interval '9 hours', 'YYYY-MM') AS ym, SUM("amount")::bigint AS total
+      FROM "Invoice"
+      WHERE "userId" = ${userId}
+        AND "issueDate" >= ${sqlTimestamp(from)}::timestamp AND "issueDate" < ${sqlTimestamp(to)}::timestamp
+      GROUP BY 2`,
+    // カテゴリ別（今月）
+    prisma.expense.groupBy({
+      by: ['category'],
+      where: { userId, date: { gte: cur.start, lt: cur.end } },
+      _sum: { amount: true },
+    }),
+    // 最近5件
     prisma.expense.findMany({
-      where: { ...userFilter, date: { gte: start, lt: end } }, // Expense.date は DateTime
-      orderBy: { date: 'desc' },
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, date: true, amount: true, vendor: true, category: true },
     }),
     prisma.invoice.findMany({
-      where: { ...userFilter, issueDate: { gte: startISO, lt: endISO } }, // ISO 文字列で比較
+      where: { userId },
       orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, issueDate: true, amount: true, client: true },
     }),
   ])
 
-  const totalExpense = expenses.reduce((a: number, b: ExpenseType) => a + (b.amount ?? 0), 0)
-  const totalSales   = invoices.reduce((a: number, b: InvoiceType) => a + (b.amount ?? 0), 0)
-  const profit       = totalSales - totalExpense
+  // ───────────────── 12ヶ月推移
+  const expenseByMonth = new Map<string, number>()
+  const salesByMonth = new Map<string, number>()
+  for (const r of monthly) {
+    const target = r.kind === 'expense' ? expenseByMonth : salesByMonth
+    target.set(r.ym, Number(r.total ?? 0))
+  }
+  const expSeries = months.map((m) => expenseByMonth.get(m) ?? 0)
+  const salesSeries = months.map((m) => salesByMonth.get(m) ?? 0)
 
-  // ───────────────── 前月
-  const pStart = new Date(year, month - 2, 1)
-  const pEnd   = new Date(year, month - 1, 1)
-  const pStartISO = pStart.toISOString()
-  const pEndISO   = pEnd.toISOString()
-
-  const [pExpenses, pInvoices] = await Promise.all([
-    prisma.expense.findMany({ where: { ...userFilter, date: { gte: pStart, lt: pEnd } } }),
-    prisma.invoice.findMany({ where: { ...userFilter, issueDate: { gte: pStartISO, lt: pEndISO } } }),
-  ])
-  const prevExpense = pExpenses.reduce((a: number, b: ExpenseType) => a + (b.amount ?? 0), 0)
-  const prevSales   = pInvoices.reduce((a: number, b: InvoiceType) => a + (b.amount ?? 0), 0)
-  const prevProfit  = prevSales - prevExpense
+  // ───────────────── 当月・前月（推移の末尾 2 か月と同じ値）
+  const totalExpense = expSeries[TREND_MONTHS - 1]
+  const totalSales = salesSeries[TREND_MONTHS - 1]
+  const profit = totalSales - totalExpense
+  const prevExpense = expSeries[TREND_MONTHS - 2]
+  const prevSales = salesSeries[TREND_MONTHS - 2]
+  const prevProfit = prevSales - prevExpense
 
   // ───────────────── カテゴリ集計（今月）
-  const byCategory: Record<string, number> = {}
-  for (const e of expenses) {
-    const key = e.category ?? '未分類'
-    byCategory[key] = (byCategory[key] ?? 0) + (e.amount ?? 0)
+  const byCategory = new Map<string, number>()
+  for (const c of categories) {
+    const key = c.category || '未分類'
+    byCategory.set(key, (byCategory.get(key) ?? 0) + (c._sum.amount ?? 0))
   }
-  const categoryRows = Object.entries(byCategory)
+  const categoryRows = [...byCategory.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([name, amount]) => ({ name, amount }))
 
-  // ───────────────── 12ヶ月推移
-  const months: string[] = []
-  const expSeries: number[] = []
-  const salesSeries: number[] = []
-
-  for (let i = 11; i >= 0; i--) {
-    const sDate = new Date(year, month - 1 - i, 1)
-    const eDate = new Date(year, month - i, 1)
-    months.push(ymKey(sDate))
-
-    const [ex, inv] = await Promise.all([
-      prisma.expense.aggregate({
-        _sum: { amount: true },
-        where: { ...userFilter, date: { gte: sDate, lt: eDate } },
-      }),
-      prisma.invoice.aggregate({
-        _sum: { amount: true },
-        where: { ...userFilter, issueDate: { gte: sDate.toISOString(), lt: eDate.toISOString() } },
-      }),
-    ])
-
-    expSeries.push(Number(ex._sum.amount ?? 0))
-    salesSeries.push(Number(inv._sum.amount ?? 0))
-  }
-
-  // ───────────────── 最近5件
-  const [recentExpenses, recentInvoices] = await Promise.all([
-    prisma.expense.findMany({
-      where: { ...userFilter },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-    }),
-    prisma.invoice.findMany({
-      where: { ...userFilter },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-    }),
-  ])
-
   // ───────────────── アラート
   const alerts: { type: 'warning' | 'info' | 'danger'; message: string }[] = []
-  if (totalExpense > totalSales && (totalExpense > 0 || totalSales > 0)) {
-    alerts.push({ type: 'warning', message: '今月は経費が売上を上回っています。' })
-  }
   if (totalSales === 0 && totalExpense === 0) {
     alerts.push({ type: 'info', message: '今月のデータがまだ登録されていません。' })
   }
   if (profit < 0) {
-    alerts.push({ type: 'danger', message: '今月は赤字になっています。' })
+    alerts.push({ type: 'danger', message: '今月は経費が売上を上回り、赤字になっています。' })
   }
   if (prevSales > 0 && totalSales < prevSales * 0.8) {
     alerts.push({ type: 'warning', message: '先月より売上が20%以上減少しています。' })
@@ -136,16 +127,16 @@ export const GET = withAuth(async (req, { session: s }) => {
     byCategory: categoryRows,
     trend: { months, expenses: expSeries, sales: salesSeries },
     recent: {
-      expenses: recentExpenses.map((e: ExpenseType) => ({
+      expenses: recentExpenses.map((e) => ({
         id: e.id,
-        date: toYMD(e.date),
+        date: formatDateJST(e.date),
         amount: e.amount,
         vendor: e.vendor,
         category: e.category ?? '',
       })),
-      invoices: recentInvoices.map((i: InvoiceType) => ({
+      invoices: recentInvoices.map((i) => ({
         id: i.id,
-        date: toYMD(i.issueDate), // 表示用に整形
+        date: formatDateJST(i.issueDate),
         amount: i.amount,
         client: i.client,
       })),

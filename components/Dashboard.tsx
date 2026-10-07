@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { yearMonthJST } from '@/lib/dates'
 
 type Summary = {
   expense: number; sales: number; profit: number
@@ -10,7 +11,7 @@ type CatRow = { name: string; amount: number }
 type Trend = { months: string[]; expenses: number[]; sales: number[] }
 type Recent = {
   expenses: { id: string; date: string; amount: number; vendor: string; category: string }[];
-  invoices: { id: string; date: string; amount: number; client: string; status: string }[];
+  invoices: { id: string; date: string; amount: number; client: string }[];
 }
 type Alert = { type: string; message: string; id?: string }
 type ApiRes = {
@@ -23,8 +24,9 @@ type ApiRes = {
 }
 
 function fmtYen(n:number){ return '¥'+(n||0).toLocaleString() }
-function diffPct(cur:number, prev:number){
-  if (prev === 0) return cur === 0 ? 0 : 100
+/** 前月比（%）。前月が 0 のときは比率を定義できないので null。 */
+function diffPct(cur:number, prev:number): number | null {
+  if (prev === 0) return null
   return Math.round(((cur - prev) / Math.abs(prev)) * 100)
 }
 const sign = (n:number)=> (n>0? `+${n}` : `${n}`)
@@ -108,8 +110,8 @@ function PieChart({ rows, size=220 }:{ rows:CatRow[]; size?:number }){
 
   if (data.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-gray-500">
-        データなし
+      <div className="rounded-lg border border-dashed p-6 text-center text-(--muted)">
+        データがありません
       </div>
     )
   }
@@ -155,26 +157,37 @@ function PieChart({ rows, size=220 }:{ rows:CatRow[]; size?:number }){
 
 /* ===== メイン ===== */
 export default function Dashboard(){
-  const now = new Date()
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth()+1)
+  const now = yearMonthJST()
+  const [year, setYear] = useState(now.year)
+  const [month, setMonth] = useState(now.month)
   const [data, setData] = useState<ApiRes | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  async function load(){
-    setLoading(true)
-    try{
-      const r = await fetch(`/api/dashboard/summary?year=${year}&month=${month}`)
-      const j: ApiRes = await r.json()
-      setData(j)
-    } finally { setLoading(false) }
-  }
-  useEffect(()=>{ load() }, [year, month])
+  useEffect(()=>{
+    let cancelled = false
+    async function load(){
+      setLoading(true)
+      try{
+        const r = await fetch(`/api/dashboard/summary?year=${year}&month=${month}`, { cache: 'no-store' })
+        if (r.status === 401) { location.href = '/api/auth/expired'; return }
+        const j = await r.json().catch(() => null)
+        if (cancelled) return
+        if (!r.ok || !j) { setError(j?.error ?? 'データの取得に失敗しました。'); return }
+        setError(null)
+        setData(j as ApiRes)
+      } catch {
+        if (!cancelled) setError('通信に失敗しました。')
+      } finally { if (!cancelled) setLoading(false) }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [year, month])
 
   const summary = data?.summary
-  const pctSales   = summary ? diffPct(summary.sales,   summary.prev.sales)   : 0
-  const pctExpense = summary ? diffPct(summary.expense, summary.prev.expense): 0
-  const pctProfit  = summary ? diffPct(summary.profit,  summary.prev.profit)  : 0
+  const pctSales   = summary ? diffPct(summary.sales,   summary.prev.sales)   : null
+  const pctExpense = summary ? diffPct(summary.expense, summary.prev.expense): null
+  const pctProfit  = summary ? diffPct(summary.profit,  summary.prev.profit)  : null
 
   return (
     <div className="space-y-4">
@@ -183,7 +196,7 @@ export default function Dashboard(){
         <h2 className="text-xl font-semibold">ダッシュボード</h2>
         <div className="ml-auto flex items-center gap-2">
           <select className="border rounded-sm px-2 py-1" value={year} onChange={e=>setYear(Number(e.target.value))}>
-            {Array.from({length:8}).map((_,i)=>now.getFullYear()-i).map(y=><option key={y} value={y}>{y}</option>)}
+            {Array.from({length:8}).map((_,i)=>now.year-i).map(y=><option key={y} value={y}>{y}</option>)}
           </select>
           <select className="border rounded-sm px-2 py-1" value={month} onChange={e=>setMonth(Number(e.target.value))}>
             {[...Array(12)].map((_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}
@@ -191,6 +204,7 @@ export default function Dashboard(){
           <span className="text-sm text-(--muted)">{loading ? '更新中…' : ''}</span>
         </div>
       </div>
+      {error && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {/* サマリーカード */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -202,15 +216,18 @@ export default function Dashboard(){
           <Card key={c.key}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
-                <div className="text-sm font-semibold text-gray-500 leading-none min-h-[18px]">
+                <div className="text-sm font-semibold text-(--muted) leading-none min-h-[18px]">
                   {c.label}
                 </div>
               </div>
               <div className="mt-2 text-2xl md:text-3xl font-bold tracking-tight leading-none min-h-[36px]">
                 {fmtYen(c.value)}
               </div>
-              <div className={`mt-2 text-xs font-medium ${c.pct>=0 ? 'text-green-600' : 'text-rose-600'}`}>
-                {`${sign(c.pct)}%`} <span className="text-(--muted) font-normal">than last month</span>
+              <div className="mt-2 text-xs font-medium">
+                <span className="text-(--muted) font-normal">前月比</span>{' '}
+                {c.pct === null
+                  ? <span className="text-(--muted)" title="前月のデータがありません">—</span>
+                  : <span className={c.pct >= 0 ? 'text-green-600' : 'text-rose-600'}>{`${sign(c.pct)}%`}</span>}
               </div>
             </CardContent>
           </Card>
@@ -225,7 +242,7 @@ export default function Dashboard(){
             <CardContent>
               {data?.trend?.months?.length
                 ? (<div className="w-full flex justify-center"><LineChart months={data.trend.months} a={data.trend.sales} b={data.trend.expenses} /></div>)
-                : <div className="text-sm text-(--muted)">読込中…</div>}
+                : <div className="text-sm text-(--muted)">{data ? 'データがありません' : '読込中…'}</div>}
               <div className="mt-2 flex items-center gap-4 text-xs text-(--muted)">
                 <span className="inline-flex items-center gap-1">
                   <span className="w-3 h-3 inline-block rounded-sm" style={{ background: '#0ea5e9' }}></span>売上
@@ -242,7 +259,7 @@ export default function Dashboard(){
             <CardContent>
               {data?.byCategory?.length
                 ? <PieChart rows={data.byCategory} />
-                : <div className="text-sm text-(--muted)">読込中…</div>}
+                : <div className="text-sm text-(--muted)">{data ? 'データがありません' : '読込中…'}</div>}
             </CardContent>
           </Card>
         </div>
