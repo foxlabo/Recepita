@@ -4,30 +4,33 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 
-export default function Signup(){
+export default function Signup() {
   const [email, setEmail] = useState('demo@example.com');
-  const [pw, setPw]       = useState('demo');
+  const [pw, setPw] = useState('demo');
   const [loading, setLoading] = useState(false);
-  const [phase, setPhase] = useState<'form'|'sent'|'error'>('form');
+  const [phase, setPhase] = useState<'form' | 'sent' | 'error'>('form');
   const [error, setError] = useState<string | null>(null);
+  const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
+  const [devMode, setDevMode] = useState(false);
 
-  async function submit(e: any) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ email, password: pw })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pw }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.error ?? '登録失敗');
+        setError(data?.error ?? '登録に失敗しました');
         setPhase('error');
         return;
       }
-      // 登録成功：認証メール案内フェーズへ
+      setVerificationUrl(data?.verificationUrl ?? null);
+      setDevMode(data?.devMode === true);
       setPhase('sent');
     } catch {
       setError('通信に失敗しました');
@@ -42,36 +45,47 @@ export default function Signup(){
     try {
       const r = await fetch('/api/account/email/register', {
         method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ email })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
+      const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error();
-      alert('確認メールを再送しました。受信トレイをご確認ください。');
+      setVerificationUrl(data?.verificationUrl ?? null);
+      setDevMode(data?.devMode === true);
+      alert(data?.devMode ? '開発用の確認リンクを更新しました。' : '確認メールを再送しました。');
     } catch {
-      alert('再送に失敗しました。時間をおいてお試しください。');
+      alert('再送に失敗しました。時間をおいて再度お試しください。');
     } finally {
       setLoading(false);
     }
   }
 
-  // === 認証メール案内画面（デザイントーンを維持） ===
   if (phase === 'sent') {
     return (
       <div className="min-h-screen grid place-items-center">
-        <Card className="w-[380px]">
+        <Card className="w-[420px] max-w-[92vw]">
           <CardContent>
             <div className="space-y-3">
-              <h2 className="text-xl font-semibold">メール確認のお願い</h2>
+              <h2 className="text-xl font-semibold">確認手順</h2>
               <p className="text-sm text-[var(--muted)]">
-                <b>{email}</b> 宛に確認メールを送信しました。<br />
-                メール内のリンクをクリックして認証を完了してください。<br />
-                認証が完了するまでログインはできません。
+                <b>{email}</b> 宛てに確認メールを送信しました。
+                メール内のリンクから認証を完了してください。
               </p>
+              {devMode && verificationUrl && (
+                <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+                  <div className="font-medium">開発モード</div>
+                  <a className="mt-2 block break-all text-recepita hover:underline" href={verificationUrl}>
+                    {verificationUrl}
+                  </a>
+                </div>
+              )}
               <Button className="w-full" variant="outline" onClick={resend} disabled={loading}>
-                確認メールを再送する
+                確認メールを再送
               </Button>
               <div className="text-sm">
-                <a className="text-recepita hover:underline" href="/login">ログインに戻る</a>
+                <a className="text-recepita hover:underline" href="/login">
+                  ログインに戻る
+                </a>
               </div>
             </div>
           </CardContent>
@@ -80,7 +94,6 @@ export default function Signup(){
     );
   }
 
-  // === 登録フォーム（オリジナルデザインのまま） ===
   return (
     <div className="min-h-screen grid place-items-center">
       <Card className="w-[380px]">
@@ -94,20 +107,22 @@ export default function Signup(){
 
             <div className="space-y-1">
               <label className="text-sm text-[var(--muted)]">メール</label>
-              <Input value={email} onChange={e=> setEmail(e.target.value)} />
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
 
             <div className="space-y-1">
               <label className="text-sm text-[var(--muted)]">パスワード</label>
-              <Input type="password" value={pw} onChange={e=> setPw(e.target.value)} />
+              <Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
             </div>
 
             <Button className="w-full" disabled={loading}>
-              {loading ? '登録中…' : '登録'}
+              {loading ? '登録中...' : '登録'}
             </Button>
 
             <div className="text-sm">
-              <a className="text-recepita hover:underline" href="/login">ログインに戻る</a>
+              <a className="text-recepita hover:underline" href="/login">
+                ログインに戻る
+              </a>
             </div>
           </form>
         </CardContent>

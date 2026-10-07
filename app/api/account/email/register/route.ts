@@ -36,8 +36,14 @@ export async function POST(req: Request) {
     const verifyUrl = `${baseUrl}/api/account/email/verify?token=${encodeURIComponent(token)}`;
 
     // 5) 送信
-    const conn = process.env.AZURE_COMMUNICATION_CONNECTION_STRING!;
-    const sender = process.env.AZURE_COMMUNICATION_SENDER!;
+    const conn = process.env.AZURE_COMMUNICATION_CONNECTION_STRING;
+    const sender = process.env.AZURE_COMMUNICATION_SENDER;
+    if (!conn || !sender) {
+      if (process.env.NODE_ENV !== "production") {
+        return NextResponse.json({ ok: true, verificationUrl: verifyUrl, devMode: true });
+      }
+      return NextResponse.json({ error: "mail config missing" }, { status: 500 });
+    }
     const client = new EmailClient(conn);
 
     const poller = await client.beginSend({

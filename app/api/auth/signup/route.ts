@@ -36,11 +36,17 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
+    const emailData = await emailRes.json().catch(() => ({}));
 
     if (!emailRes.ok) {
-      const body = await emailRes.json().catch(() => ({}));
-      throw new Error(body?.error || "failed to send verification email");
+      throw new Error(emailData?.error || "failed to send verification email");
     }
+    return NextResponse.json({
+      ok: true,
+      verifyRequired: true,
+      verificationUrl: emailData?.verificationUrl,
+      devMode: emailData?.devMode === true,
+    });
   } catch (e) {
     console.error("[EMAIL REGISTER CALL ERROR]", e);
     await prisma.verificationToken.deleteMany({ where: { userId: user.id } }).catch(() => {});
