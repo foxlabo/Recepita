@@ -1,2 +1,7 @@
+# Normalise text files to LF in the repository and in working trees (Biome
+# formats with LF, so CRLF checkouts would otherwise fail `npm run lint`).
+* text=auto eol=lf
 # Shell scripts run inside Linux containers: keep LF even on Windows checkouts
 *.sh text eol=lf
+*.png binary
+*.ico binary
