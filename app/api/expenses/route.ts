@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth-server';
 import { readJson } from '@/lib/http';
-import { dateInputSchema, int32Schema, optionalText } from '@/lib/validation';
-import type { Prisma } from '@/lib/generated/prisma/client';
+import { dateInputSchema, expenseItemsSchema, int32Schema, optionalText } from '@/lib/validation';
+import { expenseItemsText, lineItemsOrder, toLineItemCreateData } from '@/lib/items';
 
 export const runtime = 'nodejs';
 
@@ -13,34 +13,20 @@ export const GET = withAuth(async (_req, { session }) => {
   const list = await prisma.expense.findMany({
     where: { userId: session.userId },
     orderBy: { date: 'desc' },
+    include: { lineItems: { orderBy: lineItemsOrder } },
   });
 
-  const withSummary = list.map((e: any) => ({
+  const withSummary = list.map((e) => ({
     ...e,
-    itemsSummary: Array.isArray(e.items)
-      ? e.items
-          .map((it: any) => `${it?.name ?? '不明'}:${it?.total ?? it?.price ?? ''}`)
-          .join(', ')
-      : undefined,
+    itemsSummary: expenseItemsText(e) || undefined,
   }));
 
   return NextResponse.json(withSummary);
 });
 
-const expenseItemsSchema = z
-  .array(
-    z.object({
-      name: optionalText(500),
-      qty: z.number().nullish(),
-      price: z.number().nullish(),
-      total: z.number().nullish(),
-    }),
-  )
-  .max(500);
-
 const createSchema = z.object({
   date: dateInputSchema,
-  amount: z.coerce.number().pipe(int32Schema),
+  amount: z.coerce.number({ error: '金額は数値で入力してください。' }).pipe(int32Schema),
   vendor: z.string().max(500),
   memo: optionalText(5000),
   category: optionalText(200),
@@ -51,7 +37,7 @@ const createSchema = z.object({
   paymentMethod: optionalText(100),
 });
 
-// POST /api/expenses … 作成
+// POST /api/expenses … 作成（品目は ExpenseItem として保存）
 export const POST = withAuth(async (req, { session }) => {
   const b = await readJson(req, createSchema);
 
@@ -63,12 +49,13 @@ export const POST = withAuth(async (req, { session }) => {
       vendor: b.vendor,
       memo: b.memo ?? null,
       category: b.category ?? null,
-      items: (b.items ?? undefined) as Prisma.InputJsonValue | undefined,
       subtotal: b.subtotal ?? null,
       tax: b.tax ?? null,
       total: b.total ?? null,
       paymentMethod: b.paymentMethod ?? null,
+      lineItems: b.items?.length ? { create: toLineItemCreateData(b.items) } : undefined,
     },
+    include: { lineItems: { orderBy: lineItemsOrder } },
   });
 
   return NextResponse.json(row);

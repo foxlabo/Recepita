@@ -7,6 +7,7 @@ import { withAuth } from '@/lib/auth-server';
 import { HttpError, jsonError } from '@/lib/http';
 import { enforce, RATE_LIMITS } from '@/lib/rate-limit';
 import { inferExpenseCategory } from '@/lib/ai/expenseCategory';
+import { formatItemsText, itemsFromJson } from '@/lib/items';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -233,12 +234,8 @@ export const POST = withAuth(async (req, { session }) => {
       : jsonError(502, MSG_FAILED, { extra: { ok: false } });
   }
 
-  let itemsSummary = '';
-  if (Array.isArray(res?.detected?.items)) {
-    itemsSummary = res.detected.items
-      .map((it: any) => `${it?.name ?? '不明'}:${it?.total ?? it?.price ?? ''}`)
-      .join(', ');
-  }
+  // 品目は画面と同じ "name:amount, …" 形式（lib/items.ts）
+  let itemsSummary = formatItemsText(itemsFromJson(res?.detected?.items));
   if (typeof res?.itemsSummary === 'string') itemsSummary = res.itemsSummary;
 
   // OpenAI で経費区分などを推定・補正（失敗しても OCR 結果は返す）

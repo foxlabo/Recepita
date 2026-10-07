@@ -69,3 +69,16 @@ export const int32Schema = z
 /** Optional free text with a length cap (undefined / null pass through). */
 export const optionalText = (max: number) =>
   z.string({ error: '文字列で入力してください。' }).max(max, `${max}文字以内で入力してください。`).nullish();
+
+/** Structured expense items accepted by /api/expenses (stored as ExpenseItem rows). */
+export const expenseItemsSchema = z
+  .array(
+    z.object({
+      name: optionalText(500),
+      qty: z.number().max(1_000_000).nullish(),
+      price: z.number().max(2_147_483_647).min(-2_147_483_648).nullish(),
+      total: z.number().max(2_147_483_647).min(-2_147_483_648).nullish(),
+    }),
+    { error: '品目の形式が正しくありません。' },
+  )
+  .max(500, '品目が多すぎます。');

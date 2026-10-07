@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { formatDateJST, normalizeDateString, todayJST } from '@/lib/dates';
+import { formatItemsText, itemsFromJson, parseItemsText } from '@/lib/items';
 
 // ===== OCR endpoint (個別用) =====
 const OCR_ENDPOINT = '/api/ocr';
@@ -30,26 +31,6 @@ type OcrResponse = {
 };
 
 // ===== helpers =====
-function parseItemsText(s: string) {
-  if (!s) return [];
-  const parts = s.replace(/\r/g, '').trim().split(/[\n,、]+/).map(p => p.trim()).filter(Boolean);
-  return parts.map(p => {
-    const [nameRaw, priceRaw] = p.split(/[:：=]/).map(x => (x || '').trim());
-    const amt = Math.round(Number((priceRaw || '').replace(/[^0-9.]/g, '')) || 0);
-    return { name: nameRaw || '不明', qty: 1, price: amt, total: amt };
-  });
-}
-function itemsToText(items?: Array<{ name?: string; price?: number; total?: number }>) {
-  if (!Array.isArray(items)) return '';
-  return items
-    .map(it => {
-      const name = String(it?.name ?? '').trim();
-      const price = Math.round(Number(it?.total ?? it?.price ?? 0));
-      return name ? `${name}:${price}` : null;
-    })
-    .filter(Boolean)
-    .join(', ');
-}
 function toNum(v: any): number | undefined {
   if (v == null) return;
   const n = Number(String(v).replace(/[,￥¥円\s]/g,''));
@@ -68,16 +49,6 @@ function normalize(raw: any): any {
   }
   return c;
 }
-function itemsFromDetectedToText(items: any[] | undefined): string {
-  if (!Array.isArray(items)) return '';
-  const rows = items.map((it: any) => {
-    const name = String(it?.name ?? it?.description ?? it?.item ?? '').trim();
-    const price = toNum(it?.total ?? it?.price ?? it?.unitPrice ?? it?.amount) ?? 0;
-    return name ? `${name}:${price}` : null;
-  }).filter(Boolean) as string[];
-  return rows.join(', ');
-}
-
 // preview row with both dates
 type PreviewRow = {
   id?: string;
@@ -148,7 +119,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
       const vendor = (d.vendor ?? '').toString();
 
       // 品目テキスト
-      const items = itemsFromDetectedToText(d.items);
+      const items = formatItemsText(itemsFromJson(d.items));
       const itemsSummary = items || (p?.itemsSummary ?? '');
 
       // カテゴリ／メモ（AI推測があれば）
@@ -194,7 +165,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
       vendor: form.vendor,
       category: form.category ?? '',
       memo: form.memo ?? '',
-      itemsSummary: itemsToText(parseItemsText(itemsText)) ?? ''
+      itemsSummary: formatItemsText(parseItemsText(itemsText))
     };
     onAppend(row);
     setForm({

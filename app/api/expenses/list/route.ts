@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth-server';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import { formatDateJST, isValidYearMonth, monthRangeJST } from '@/lib/dates';
+import { expenseItemsText, lineItemsOrder } from '@/lib/items';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,50 +33,24 @@ export const GET = withAuth(async (req, { session }) => {
     prisma.expense.count({ where }),
     prisma.expense.findMany({
       where,
-      include: { lineItems: true },
+      include: { lineItems: { orderBy: lineItemsOrder } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
   ]);
 
-  const items = rows.map((e) => {
-    // ① items(JSON) があれば優先して "name[:amount]" で連結
-    let fromJson = '';
-    const arr = Array.isArray(e.items) ? (e.items as any[]) : [];
-    if (arr.length) {
-      fromJson = arr
-        .map((it) => {
-          const nm = it?.name ?? it?.item ?? '';
-          const am = it?.amount ?? it?.price ?? it?.unitPrice ?? '';
-          return nm ? `${nm}${am ? `:${am}` : ''}` : '';
-        })
-        .filter(Boolean)
-        .join(', ');
-    }
-
-    // ② JSONが空なら lineItems から "name[:amount]" を生成
-    const fromLineItems = (e.lineItems ?? [])
-      .map((li) => `${li.name ?? ''}${li.amount ? `:${li.amount}` : ''}`)
-      .filter(Boolean)
-      .join(', ');
-
-    const itemsText = fromJson || fromLineItems || '';
-    const vendor = e.vendor ?? '';
-
-    return {
-      id: e.id,
-      createdAt: e.createdAt.toISOString(),
-      date: formatDateJST(e.date), // 取引日（JST の YYYY-MM-DD）
-      amount: e.amount,
-      vendor,
-      client: vendor,        // ← 取引先列の互換
-      category: e.category,
-      memo: e.memo ?? '',
-      itemsText,             // ← 過去実装と同名
-      item: itemsText,       // ← 品目列が item を読む場合でも空にならない
-    };
-  });
+  const items = rows.map((e) => ({
+    id: e.id,
+    createdAt: e.createdAt.toISOString(),
+    date: formatDateJST(e.date), // 取引日（JST の YYYY-MM-DD）
+    amount: e.amount,
+    vendor: e.vendor ?? '',
+    category: e.category,
+    memo: e.memo ?? '',
+    // 品目は ExpenseItem（一括更新が書き込む先）を優先し、旧 JSON は予備
+    itemsText: expenseItemsText(e),
+  }));
 
   return NextResponse.json({ items, total, page, pageSize });
 });
