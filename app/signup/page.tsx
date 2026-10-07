@@ -5,8 +5,8 @@ import Input from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 
 export default function Signup() {
-  const [email, setEmail] = useState('demo@example.com');
-  const [pw, setPw] = useState('demo');
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState<'form' | 'sent' | 'error'>('form');
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,10 @@ export default function Signup() {
         body: JSON.stringify({ email }),
       });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error();
+      if (!r.ok) {
+        alert(data?.error ?? '再送に失敗しました。時間をおいて再度お試しください。');
+        return;
+      }
       setVerificationUrl(data?.verificationUrl ?? null);
       setDevMode(data?.devMode === true);
       alert(data?.devMode ? '開発用の確認リンクを更新しました。' : '確認メールを再送しました。');
@@ -106,13 +109,29 @@ export default function Signup() {
             )}
 
             <div className="space-y-1">
-              <label className="text-sm text-(--muted)">メール</label>
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+              <label className="text-sm text-(--muted)" htmlFor="signup-email">メール</label>
+              <Input
+                id="signup-email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-(--muted)">パスワード</label>
-              <Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
+              <label className="text-sm text-(--muted)" htmlFor="signup-password">パスワード</label>
+              <Input
+                id="signup-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+              />
+              <p className="text-xs text-(--muted)">8文字以上で入力してください。</p>
             </div>
 
             <Button className="w-full" disabled={loading}>
