@@ -126,7 +126,10 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
     fd.append(FILE_FIELD, file, file.name);
     fd.append('model', 'prebuilt-receipt'); // ひとまず個別は固定
     const res = await fetch(OCR_ENDPOINT, { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
-    if (!res.ok) throw new Error(await res.text().catch(()=> 'OCR failed'));
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.error ?? `解析に失敗しました（HTTP ${res.status}）`);
+    }
     return res.json();
   }
 
@@ -177,7 +180,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
       console.log('OCR parsed -> form updated');
     } catch (e: any) {
       console.error(e);
-      alert('解析に失敗しました\n' + (e?.message ?? ''));
+      alert(e?.message || '解析に失敗しました');
     } finally {
       setBusy('idle');
     }

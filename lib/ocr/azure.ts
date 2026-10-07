@@ -14,6 +14,21 @@ if (!KEY)
 
 type LogicalModel = 'receipt' | 'invoice';
 
+/**
+ * Provider failure. The message is short and never contains the provider's
+ * response body; `status` / `retryAfter` drive the caller's retry logic.
+ */
+export class OcrProviderError extends Error {
+  constructor(
+    message: string,
+    readonly status = 0,
+    readonly retryAfter: string | null = null,
+  ) {
+    super(message);
+    this.name = 'OcrProviderError';
+  }
+}
+
 function buildModelUrl(logical: LogicalModel) {
   const name = logical === 'invoice' ? 'prebuilt-invoice' : 'prebuilt-receipt';
   return `${ENDPOINT}/formrecognizer/documentModels/${name}:analyze?api-version=${API_VERSION}`;
@@ -24,46 +39,55 @@ async function analyzeWithModel(
   mimeType = 'application/octet-stream',
   logicalModel: LogicalModel,
 ) {
+  if (!ENDPOINT || !KEY) throw new OcrProviderError('[Azure OCR] not configured');
   const url = buildModelUrl(logicalModel);
-  console.log(
-    '[Azure OCR] POST URL =',
-    url,
-    `(logicalModel = ${logicalModel})`,
-  );
 
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      'Ocp-Apim-Subscription-Key': KEY as string,
+      'Ocp-Apim-Subscription-Key': KEY,
       'Content-Type': mimeType,
     },
-    body: buffer as any,
+    body: new Uint8Array(buffer),
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    console.error('[Azure OCR] error body =', text);
-    throw new Error(
-      `[Azure OCR] analyze POST failed: ${res.status} ${res.statusText} ${text}`,
+    // Do not log or propagate the provider's response body.
+    await res.body?.cancel().catch(() => {});
+    throw new OcrProviderError(
+      `[Azure OCR] analyze POST failed: HTTP ${res.status}`,
+      res.status,
+      res.headers.get('retry-after'),
     );
   }
 
   const operationLocation = res.headers.get('operation-location');
   if (!operationLocation)
-    throw new Error('[Azure OCR] Missing operation-location header');
+    throw new OcrProviderError('[Azure OCR] missing operation-location header');
+  // Only ever send the subscription key back to the configured endpoint.
+  if (new URL(operationLocation).origin !== new URL(ENDPOINT).origin)
+    throw new OcrProviderError('[Azure OCR] unexpected operation-location origin');
 
   let tries = 0;
   while (tries++ < 20) {
     await new Promise((r) => setTimeout(r, 1000));
     const r2 = await fetch(operationLocation, {
-      headers: { 'Ocp-Apim-Subscription-Key': KEY as string },
+      headers: { 'Ocp-Apim-Subscription-Key': KEY },
     });
+    if (!r2.ok) {
+      await r2.body?.cancel().catch(() => {});
+      throw new OcrProviderError(
+        `[Azure OCR] poll failed: HTTP ${r2.status}`,
+        r2.status,
+        r2.headers.get('retry-after'),
+      );
+    }
     const j = await r2.json();
     if (j.status === 'succeeded') return j;
     if (j.status === 'failed')
-      throw new Error('[Azure OCR] analyze failed');
+      throw new OcrProviderError('[Azure OCR] analyze failed');
   }
-  throw new Error('[Azure OCR] analyze timed out');
+  throw new OcrProviderError('[Azure OCR] analyze timed out', 504);
 }
 
 function asNumber(v: any): number | undefined {
@@ -171,11 +195,6 @@ function parseReceiptDoc(result: any): OcrResult {
 function parseInvoiceDoc(result: any): OcrResult {
   const doc = result?.analyzeResult?.documents?.[0];
   const fields = doc?.fields || {};
-
-  console.log(
-    '[Azure OCR][invoice] field keys =',
-    Object.keys(fields || {}),
-  );
 
   const vendor =
     fields.VendorName?.valueString || fields.VendorName?.content;
@@ -288,10 +307,6 @@ export default class AzureReceiptProvider implements OcrProvider {
     mimeType = 'application/octet-stream',
     logicalModel: LogicalModel = 'receipt',
   ): Promise<OcrResult> {
-    console.log(
-      '[Azure OCR] parseFromBuffer logicalModel =',
-      logicalModel,
-    );
     const result = await analyzeWithModel(buffer, mimeType, logicalModel);
     if (logicalModel === 'invoice') {
       return parseInvoiceDoc(result);
