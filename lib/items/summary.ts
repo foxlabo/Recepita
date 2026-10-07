@@ -1,1 +1,0 @@
-export function buildItemsSummary(items?: Array<{name?: string; price?: number; total?: number}>): string { if (!Array.isArray(items)) return ''; return items.map(it => `${it?.name ?? '不明'}:${it?.total ?? it?.price ?? ''}`).join(', ');}
