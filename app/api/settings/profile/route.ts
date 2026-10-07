@@ -1,7 +1,7 @@
-// /app/api/settings/profile/route.ts
+// app/api/settings/profile/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSessionOrThrow } from '@/lib/auth-server';
+import { withAuth } from '@/lib/auth-server';
 
 function toDateOrNull(v: any): Date | null {
   if (!v) return null;
@@ -10,18 +10,17 @@ function toDateOrNull(v: any): Date | null {
 }
 
 // GET: プロフィール取得
-export async function GET(_req: Request) {
-  const { userId } = await getSessionOrThrow();           // ← 引数なし
+export const GET = withAuth(async (_req, { session }) => {
   const profile = await prisma.userProfile.findUnique({
-    where: { userId },
+    where: { userId: session.userId },
   });
   // 未作成なら空オブジェクトを返す（フロントの扱いやすさ重視）
   return NextResponse.json(profile ?? {});
-}
+});
 
 // PUT: プロフィール更新（なければ作成）
-export async function PUT(req: Request) {
-  const { userId } = await getSessionOrThrow();           // ← 引数なし
+export const PUT = withAuth(async (req, { session }) => {
+  const userId = session.userId;
   const body = await req.json();
 
   const data = {
@@ -50,4 +49,4 @@ export async function PUT(req: Request) {
   });
 
   return NextResponse.json({ ok: true, profile: saved });
-}
+});

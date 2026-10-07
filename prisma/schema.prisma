@@ -21,6 +21,9 @@ model User {
   invoices      Invoice[]
   profile UserProfile?
   isEmailVerified Boolean @default(false)
+  /// Embedded in the session JWT (`sv` claim). Incrementing it revokes every
+  /// session issued for this user (password/email change, logout-all, deletion).
+  sessionVersion  Int     @default(0)
 }
 
 model VerificationToken {

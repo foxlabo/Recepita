@@ -1,9 +1,9 @@
 // app/api/account/email/confirm/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { clearedSessionCookie } from "@/lib/auth-server";
 
 export const runtime = "nodejs";
-const COOKIE = "recepita_session";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -20,26 +20,17 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/login?email_changed=0&reason=expired", base));
   }
 
-  // メール更新＋認証フラグON
+  // メール更新＋認証フラグON。sessionVersion を上げて全端末のセッションを失効
   await prisma.user.update({
     where: { id: vt.userId },
-    data: { email: vt.email, isEmailVerified: true },
+    data: { email: vt.email, isEmailVerified: true, sessionVersion: { increment: 1 } },
   });
 
   // トークンは使い切り
   await prisma.verificationToken.delete({ where: { token } }).catch(() => {});
 
-  // ★ DB側のセッションテーブルが無いので削除処理は無し
-  // await prisma.session.deleteMany({ where: { userId: vt.userId } })
-
-  // ★ Cookie を消して /login へリダイレクト（このブラウザからは確実にログアウト）
-  const redirectUrl = new URL("/login?email_changed=1", base);
-  const res = NextResponse.redirect(redirectUrl);
-  res.cookies.set(COOKIE, "", {
-    path: "/",
-    httpOnly: true,
-    maxAge: 0,
-  });
-
+  // Cookie を消して /login へリダイレクト
+  const res = NextResponse.redirect(new URL("/login?email_changed=1", base));
+  res.cookies.set(clearedSessionCookie());
   return res;
 }

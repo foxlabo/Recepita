@@ -1,64 +1,55 @@
 // app/api/account/delete/route.ts
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
-import { getSessionOrThrow, clearSessionCookie } from "@/lib/auth-server";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import { clearSessionCookie, jsonError, withAuth } from '@/lib/auth-server';
+import { readJson } from '@/lib/http';
+import { passwordInputSchema, verifyPassword } from '@/lib/password';
+import { tombstoneEmail } from '@/lib/users';
+import { normalizeEmail } from '@/lib/validation';
 
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 
-export async function POST(req: Request) {
-  try {
-    // ログイン必須
-    const session = await getSessionOrThrow();
+const bodySchema = z.object({
+  email: z.string({ error: 'メールアドレスとパスワードを入力してください。' }).min(1, 'メールアドレスとパスワードを入力してください。').max(254),
+  password: passwordInputSchema,
+});
 
-    const { email, password } = await req.json();
+const INVALID = 'メールアドレスまたはパスワードに誤りがあります。';
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "メールアドレスとパスワードを入力してください。" },
-        { status: 400 }
-      );
-    }
+export const POST = withAuth(async (req, { session }) => {
+  const { email, password } = await readJson(req, bodySchema);
 
-    /// セッションのユーザーを取得
-const user = (await prisma.user.findUnique({
-  where: { id: session.userId },
-})) as any;  // ★ ここで any にキャスト
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, email: true, password: true, isDeleted: true },
+  });
 
-// メールが一致しない / すでに削除済み / 見つからない
-const isDeleted = user?.isDeleted === true;  // ★ any から安全に取り出す
-
-if (!user || user.email !== email || isDeleted) {
-  return NextResponse.json(
-    { error: "メールアドレスまたはパスワードに誤りがあります。" },
-    { status: 400 }
-  );
-}
-
-    // パスワードチェック
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) {
-      return NextResponse.json(
-        { error: "メールアドレスまたはパスワードに誤りがあります。" },
-        { status: 400 }
-      );
-    }
-
-    // ★ 論理削除フラグを ON
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { isDeleted: true },
-    });
-
-    // ★ セッション Cookie を削除（ログアウト）
-    await clearSessionCookie();
-
-    return NextResponse.json({ ok: true });
-  } catch (e) {
-    console.error("account delete error", e);
-    return NextResponse.json(
-      { error: "サーバーエラーが発生しました。" },
-      { status: 500 }
-    );
+  const passwordOk = await verifyPassword(password, user?.password);
+  if (!user || user.isDeleted || normalizeEmail(email) !== normalizeEmail(user.email) || !passwordOk) {
+    return jsonError(400, INVALID);
   }
-}
+
+  // 論理削除（データは保持）しつつ、個人情報は削除/置換する
+  // - email は tombstone に置き換え、同じアドレスで再登録できるようにする
+  // - sessionVersion を上げて全端末のセッションを失効
+  // - プロフィール（氏名・住所・電話番号など）と未使用の確認トークンを削除
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        email: tombstoneEmail(user.id),
+        password: '!deleted',
+        isEmailVerified: false,
+        sessionVersion: { increment: 1 },
+      },
+    }),
+    prisma.userProfile.deleteMany({ where: { userId: user.id } }),
+    prisma.verificationToken.deleteMany({ where: { userId: user.id } }),
+  ]);
+
+  await clearSessionCookie();
+  return NextResponse.json({ ok: true });
+});

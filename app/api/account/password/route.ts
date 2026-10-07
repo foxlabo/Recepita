@@ -1,16 +1,39 @@
-import { prisma } from '@/lib/prisma';
+// app/api/account/password/route.ts
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { getSession } from '@/lib/auth-server';
+import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import { jsonError, startSession, UnauthorizedError, withAuth } from '@/lib/auth-server';
+import { readJson } from '@/lib/http';
+import { hashPassword, newPasswordSchema, passwordInputSchema, verifyPassword } from '@/lib/password';
 
-export async function POST(req: Request){
-  const s = await getSession(); if(!s) return NextResponse.json({ error:'auth' }, { status:401 });
-  const { current, next } = await req.json();
-  const user = await prisma.user.findUnique({ where:{ id: s.userId } });
-  if(!user) return NextResponse.json({ error:'auth' }, { status:401 });
-  const ok = await bcrypt.compare(current, user.password);
-  if(!ok) return NextResponse.json({ error:'invalid' }, { status:400 });
-  const hash = await bcrypt.hash(next, 10);
-  await prisma.user.update({ where:{ id: user.id }, data:{ password: hash } });
-  return NextResponse.json({ ok:true });
-}
+export const runtime = 'nodejs';
+
+const bodySchema = z.object({
+  current: passwordInputSchema,
+  next: newPasswordSchema,
+});
+
+export const POST = withAuth(async (req, { session }) => {
+  const { current, next } = await readJson(req, bodySchema);
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, password: true },
+  });
+  if (!user) throw new UnauthorizedError();
+
+  if (!(await verifyPassword(current, user.password))) {
+    return jsonError(400, '現在のパスワードが正しくありません。');
+  }
+
+  // パスワード更新と同時に sessionVersion を上げ、他端末のセッションを失効させる
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: { password: await hashPassword(next), sessionVersion: { increment: 1 } },
+    select: { id: true, email: true, sessionVersion: true },
+  });
+  // この端末はログイン状態を維持（新しい sessionVersion で再発行）
+  await startSession(updated);
+
+  return NextResponse.json({ ok: true });
+});

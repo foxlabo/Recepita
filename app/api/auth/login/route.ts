@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { signSession, setSessionCookie } from "@/lib/auth-server";
+import { startSession } from "@/lib/auth-server";
 
 export const runtime = "nodejs";
 
@@ -34,8 +34,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const token = signSession({ userId: user.id, email: user.email });
-  await setSessionCookie(token); // cookies() 経由で Set-Cookie される
+  await startSession(user); // JWT に sessionVersion (sv) を含めて Cookie に保存
 
   return NextResponse.json({ ok: true });
 }

@@ -1,10 +1,14 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth-server'
 import UserMenu from '@/components/UserMenu'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // proxy.ts は JWT の署名/期限のみ確認する。失効済み（sessionVersion 不一致・
+  // 削除済みユーザー）の場合は Cookie を消してログイン画面へ戻す。
   const session = await getSession()
-  const email = (session as any)?.email as string | undefined
+  if (!session) redirect('/api/auth/expired')
+  const email = session.email
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 
 export default async function DashboardPage() {
   const session = await getSession()
-  if (!session) redirect('/login')
+  if (!session) redirect('/api/auth/expired')
 
   return (
     <div className="p-4">

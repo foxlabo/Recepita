@@ -114,12 +114,22 @@ export default function Settings() {
                 <div className="flex gap-2">
                   <Button
                     onClick={async () => {
-                      await fetch('/api/account/password', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(pw),
-                      });
-                      alert('パスワードを更新しました');
+                      try {
+                        const res = await fetch('/api/account/password', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(pw),
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                          alert(data?.error || 'パスワードの更新に失敗しました。');
+                          return;
+                        }
+                        setPw({ current: '', next: '' });
+                        alert('パスワードを更新しました。他の端末ではサインアウトされます。');
+                      } catch {
+                        alert('通信に失敗しました。時間をおいてお試しください。');
+                      }
                     }}
                   >
                     変更
@@ -127,7 +137,12 @@ export default function Settings() {
                   <Button
                     variant="outline"
                     onClick={async () => {
-                      await fetch('/api/auth/logout', { method: 'POST' });
+                      if (!confirm('すべての端末からサインアウトします。よろしいですか？')) return;
+                      const res = await fetch('/api/auth/logout-all', { method: 'POST' }).catch(() => null);
+                      if (!res || (!res.ok && res.status !== 401)) {
+                        alert('サインアウトに失敗しました。時間をおいてお試しください。');
+                        return;
+                      }
                       location.href = '/login';
                     }}
                   >

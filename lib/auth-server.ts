@@ -1,62 +1,110 @@
 // lib/auth-server.ts
-import 'server-only'
-import jwt from 'jsonwebtoken'
-import { cookies } from 'next/headers'
+import 'server-only';
+import { cache } from 'react';
+import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { handleRouteError, UnauthorizedError } from '@/lib/http';
+import {
+  SESSION_COOKIE,
+  SESSION_MAX_AGE,
+  signSessionToken,
+  verifySessionToken,
+} from '@/lib/session-token';
 
-export const SESSION_COOKIE = 'recepita_session'
-const MAX_AGE = 60 * 60 * 24 * 7 // 7 days
+export { SESSION_COOKIE } from '@/lib/session-token';
+export { jsonError, UnauthorizedError } from '@/lib/http';
 
-export type Session = { userId: string; email: string }
+export type Session = { userId: string; email: string; sessionVersion: number };
 
-function getJwtSecret() {
-  const secret = process.env.JWT_SECRET?.trim()
-  if (!secret) throw new Error('JWT_SECRET is required')
-  return secret
-}
+const cookieOptions = () => ({
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+});
 
-export function signSession(payload: Session) {
-  return jwt.sign(payload, getJwtSecret(), { expiresIn: MAX_AGE })
-}
-
-export function verifySession(token: string): Session | null {
-  try {
-    return jwt.verify(token, getJwtSecret()) as Session
-  } catch {
-    return null
-  }
-}
-
-export async function setSessionCookie(token: string) {
-  const store = await cookies()
-  store.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: MAX_AGE,
-    path: '/',
-  })
+/** Issue a session JWT for the user and store it in the session cookie. */
+export async function startSession(user: { id: string; email: string; sessionVersion: number }) {
+  const token = await signSessionToken({ userId: user.id, email: user.email, sv: user.sessionVersion });
+  const store = await cookies();
+  store.set(SESSION_COOKIE, token, { ...cookieOptions(), maxAge: SESSION_MAX_AGE });
 }
 
 export async function clearSessionCookie() {
-  const store = await cookies()
-  store.set(SESSION_COOKIE, '', { httpOnly: true, maxAge: 0, path: '/' })
+  const store = await cookies();
+  store.set(SESSION_COOKIE, '', { ...cookieOptions(), maxAge: 0 });
 }
 
-export async function getSession(): Promise<Session | null> {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE)?.value
-  if (!token) return null
-  const session = verifySession(token)
-  if (!session) console.warn('getSession.verify.failed')
-  return session
+/** Cookie attributes for clearing the session on a manually built response. */
+export const clearedSessionCookie = () => ({
+  name: SESSION_COOKIE,
+  value: '',
+  ...cookieOptions(),
+  maxAge: 0,
+});
+
+/**
+ * Returns the current session, or null when the cookie is missing, the JWT is
+ * invalid/expired, the user no longer exists or is deleted, or the token's
+ * session version was revoked (User.sessionVersion was incremented).
+ */
+export const getSession = cache(async (): Promise<Session | null> => {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+
+  const claims = await verifySessionToken(token);
+  if (!claims) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: claims.userId },
+    select: { id: true, email: true, sessionVersion: true, isDeleted: true },
+  });
+  if (!user || user.isDeleted || user.sessionVersion !== claims.sv) return null;
+
+  return { userId: user.id, email: user.email, sessionVersion: user.sessionVersion };
+});
+
+/** Returns the session or throws UnauthorizedError (→ 401 via withAuth). */
+export async function requireUser(): Promise<Session> {
+  const session = await getSession();
+  if (!session) throw new UnauthorizedError();
+  return session;
 }
 
-export async function getSessionOrThrow(): Promise<Session> {
-  const s = await getSession()
-  if (!s) throw new Error('Unauthorized')
-  return s
+/**
+ * Revoke every session of the user. Returns the new version so the caller can
+ * re-issue a cookie for the current device if desired.
+ */
+export async function bumpSessionVersion(userId: string): Promise<number> {
+  const u = await prisma.user.update({
+    where: { id: userId },
+    data: { sessionVersion: { increment: 1 } },
+    select: { sessionVersion: true },
+  });
+  return u.sessionVersion;
 }
 
-export async function getUserIdOrThrow(): Promise<string> {
-  return (await getSessionOrThrow()).userId
+type RouteCtx<P> = { params: Promise<P> };
+
+/**
+ * Wrap an API route handler: requires a valid session (401
+ * `{ error: 'unauthorized' }` otherwise) and turns thrown errors into safe
+ * JSON responses.
+ */
+export function withAuth<P extends Record<string, string | string[]> = {}>(
+  handler: (
+    req: NextRequest,
+    ctx: { session: Session; params: P },
+  ) => Promise<Response> | Response,
+) {
+  return async (req: NextRequest, ctx: RouteCtx<P>): Promise<Response> => {
+    try {
+      const session = await requireUser();
+      return await handler(req, { session, params: await ctx.params });
+    } catch (e) {
+      return handleRouteError(e);
+    }
+  };
 }
