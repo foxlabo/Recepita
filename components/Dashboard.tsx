@@ -294,7 +294,9 @@ export default function Dashboard() {
                     —
                   </span>
                 ) : (
-                  <span className={c.pct >= 0 ? 'text-green-700 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}>{`${sign(c.pct)}%`}</span>
+                  <span
+                    className={c.pct >= 0 ? 'text-green-700 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}
+                  >{`${sign(c.pct)}%`}</span>
                 )}
               </div>
             </CardContent>
