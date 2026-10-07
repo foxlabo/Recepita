@@ -219,37 +219,37 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
     <div className="space-y-4">
 
       <Card>
-        <CardHeader className="p-4 border-b border-[var(--border)]">新規登録</CardHeader>
+        <CardHeader className="p-4 border-b border-(--border)">新規登録</CardHeader>
         <CardContent>
           <form onSubmit={submit} id="form-new" className="grid gap-3 md:grid-cols-4 w-full">
             {/* 1行目：5列 */}
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">取引日</label>
+              <label className="text-sm text-(--muted)">取引日</label>
               <Input type="date" value={form.tradeDate} onChange={e => setForm({ ...form, tradeDate: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">金額</label>
+              <label className="text-sm text-(--muted)">金額</label>
               <Input inputMode="numeric" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">取引先</label>
+              <label className="text-sm text-(--muted)">取引先</label>
               <Input value={form.vendor} onChange={e => setForm({ ...form, vendor: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">区分</label>
+              <label className="text-sm text-(--muted)">区分</label>
               <Input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
             </div>
             {/*<div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">支払方法</label>
+              <label className="text-sm text-(--muted)">支払方法</label>
               <Input value={form.paymentMethod} onChange={e => setForm({ ...form, paymentMethod: e.target.value })} />
             </div>*/}
 
             {/* 2行目：品目（フル幅） */}
             <div className="space-y-1 md:col-span-5">
-              <label className="text-sm text-[var(--muted)]">品目</label>
+              <label className="text-sm text-(--muted)">品目</label>
               <textarea
                 rows={2}
-                className="w-full rounded border px-3 py-2"
+                className="w-full rounded-sm border px-3 py-2"
                 value={itemsText}
                 onChange={e => setItemsText(e.target.value)}
               />
@@ -257,7 +257,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
 
             {/* 3行目：メモ（フル幅） */}
             <div className="space-y-1 md:col-span-5">
-              <label className="text-sm text-[var(--muted)]">メモ</label>
+              <label className="text-sm text-(--muted)">メモ</label>
               <Input value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })} />
             </div>
 
@@ -277,7 +277,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
               >
                 解析
               </Button>
-              <span className="text-[var(--muted)] ml-2">状態: {statusText}</span>
+              <span className="text-(--muted) ml-2">状態: {statusText}</span>
               <div className="ml-auto">
                 <Button type="submit">追加</Button>
               </div>
@@ -288,7 +288,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
 
       {/* 下書き（DB） */}
       <Card>
-        <CardHeader className="p-4 border-b border-[var(--border)] flex items-center justify-between">
+        <CardHeader className="p-4 border-b border-(--border) flex items-center justify-between">
           <div>下書き</div>
           <div className="flex items-center gap-2">
             <Button size="md" variant="outline" onClick={onClearDrafts}>クリア</Button>
@@ -297,8 +297,8 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm border border-[var(--border)] rounded-lg overflow-hidden">
-              <thead className="bg-[var(--muted-bg)] border-b border-[var(--border)]">
+            <table className="w-full text-sm border border-(--border) rounded-lg overflow-hidden">
+              <thead className="bg-(--muted-bg) border-b border-(--border)">
                 <tr className="text-left">
                   <th className="p-2">登録日</th>
                   <th className="p-2">取引日</th>
@@ -312,7 +312,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
               </thead>
               <tbody>
                 {drafts.map((x, i) => (
-                  <tr key={i} className="border-b border-[var(--border)]">
+                  <tr key={i} className="border-b border-(--border)">
                     <td className="p-2 whitespace-nowrap">{x.registeredDate}</td>
                     <td className="p-2 whitespace-nowrap">{x.tradeDate}</td>
                     <td className="p-2 text-right">{Number(x.amount).toLocaleString()}</td>
@@ -326,7 +326,7 @@ function SingleRegisterTab({ onAppend, drafts, onDeleteDraft, onFinalize, onClea
                   </tr>
                 ))}
                 {drafts.length === 0 && (
-                  <tr><td colSpan={8} className="p-3 text-[var(--muted)]">下書きなし</td></tr>
+                  <tr><td colSpan={8} className="p-3 text-(--muted)">下書きなし</td></tr>
                 )}
               </tbody>
             </table>
@@ -383,13 +383,13 @@ export default function Expenses(){
       <h2 className="text-xl font-semibold">経費</h2>
       <div className="flex items-center gap-2 border-b pb-2 mt-2">
         <button
-          className={`px-4 py-2 rounded-t border-b-2 ${active==='single' ? 'border-black font-semibold' : 'border-transparent text-[var(--muted)]'}`}
+          className={`px-4 py-2 rounded-t border-b-2 ${active==='single' ? 'border-black font-semibold' : 'border-transparent text-(--muted)'}`}
           onClick={()=>setActive('single')}
         >
           個別登録
         </button>
         <button
-          className={`px-4 py-2 rounded-t border-b-2 ${active==='bulk' ? 'border-black font-semibold' : 'border-transparent text-[var(--muted)]'}`}
+          className={`px-4 py-2 rounded-t border-b-2 ${active==='bulk' ? 'border-black font-semibold' : 'border-transparent text-(--muted)'}`}
           onClick={()=>setActive('bulk')}
         >
           一括登録

@@ -90,7 +90,7 @@ export default function Settings() {
               <div className="grid gap-3">
                 <h3 className="font-semibold text-lg">パスワード変更</h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     現在のパスワード
                   </label>
                   <Input
@@ -102,7 +102,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     新しいパスワード
                   </label>
                   <Input
@@ -137,10 +137,10 @@ export default function Settings() {
               </div>
 
               {/* メールアドレス変更 */}
-              <div className="grid gap-3 border-t border-[var(--border)] pt-4">
+              <div className="grid gap-3 border-t border-(--border) pt-4">
                 <h3 className="font-semibold text-lg">メールアドレス変更</h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     新しいメールアドレス
                   </label>
                   <Input
@@ -150,7 +150,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     現在のパスワード（確認）
                   </label>
                   <Input
@@ -196,12 +196,12 @@ export default function Settings() {
               </div>
 
               {/* アカウント削除 */}
-              <div className="grid gap-3 border-t border-[var(--border)] pt-4">
+              <div className="grid gap-3 border-t border-(--border) pt-4">
                 <h3 className="font-semibold text-lg text-red-600">
                   アカウント削除
                 </h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     メールアドレス
                   </label>
                   <Input
@@ -211,7 +211,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     パスワード
                   </label>
                   <Input
@@ -289,7 +289,7 @@ export default function Settings() {
               {/* 氏名 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">姓</label>
+                  <label className="text-sm text-(--muted)">姓</label>
                   <Input
                     value={profile.lastName || ''}
                     onChange={(e) =>
@@ -298,7 +298,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">名</label>
+                  <label className="text-sm text-(--muted)">名</label>
                   <Input
                     value={profile.firstName || ''}
                     onChange={(e) =>
@@ -311,7 +311,7 @@ export default function Settings() {
               {/* フリガナ */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     セイ（カナ）
                   </label>
                   <Input
@@ -322,7 +322,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     メイ（カナ）
                   </label>
                   <Input
@@ -337,7 +337,7 @@ export default function Settings() {
               {/* 生年月日・性別 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">生年月日</label>
+                  <label className="text-sm text-(--muted)">生年月日</label>
                   <Input
                     type="date"
                     value={profile.birthDate || ''}
@@ -347,13 +347,13 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">性別</label>
+                  <label className="text-sm text-(--muted)">性別</label>
                   <select
                     value={profile.gender || ''}
                     onChange={(e) =>
                       setProfile({ ...profile, gender: e.target.value })
                     }
-                    className="w-full rounded-md border border-[var(--border)] bg-white dark:bg-[var(--card)] px-3 py-2"
+                    className="w-full rounded-md border border-(--border) bg-white dark:bg-(--card) px-3 py-2"
                   >
                     <option value="">未選択</option>
                     <option value="male">男性</option>
@@ -366,7 +366,7 @@ export default function Settings() {
               {/* 連絡先・住所 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">電話番号</label>
+                  <label className="text-sm text-(--muted)">電話番号</label>
                   <Input
                     value={profile.phone || ''}
                     onChange={(e) =>
@@ -375,7 +375,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     郵便番号
                   </label>
                   <Input
@@ -390,7 +390,7 @@ export default function Settings() {
 
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     都道府県
                   </label>
                   <Input
@@ -401,7 +401,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     市区町村
                   </label>
                   <Input
@@ -414,7 +414,7 @@ export default function Settings() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm text-[var(--muted)]">番地</label>
+                <label className="text-sm text-(--muted)">番地</label>
                 <Input
                   value={profile.address1 || ''}
                   onChange={(e) =>
@@ -423,7 +423,7 @@ export default function Settings() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-[var(--muted)]">建物名等</label>
+                <label className="text-sm text-(--muted)">建物名等</label>
                 <Input
                   value={profile.address2 || ''}
                   onChange={(e) =>
@@ -435,7 +435,7 @@ export default function Settings() {
               {/* 事業情報 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     屋号（事業所名）
                   </label>
                   <Input
@@ -446,7 +446,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">開業日</label>
+                  <label className="text-sm text-(--muted)">開業日</label>
                   <Input
                     type="date"
                     value={profile.startDate || ''}
@@ -459,7 +459,7 @@ export default function Settings() {
 
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     業種／職種
                   </label>
                   <Input
@@ -470,7 +470,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)">
                     登録番号（インボイス）
                   </label>
                   <Input

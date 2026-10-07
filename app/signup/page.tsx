@@ -67,7 +67,7 @@ export default function Signup() {
           <CardContent>
             <div className="space-y-3">
               <h2 className="text-xl font-semibold">確認手順</h2>
-              <p className="text-sm text-[var(--muted)]">
+              <p className="text-sm text-(--muted)">
                 <b>{email}</b> 宛てに確認メールを送信しました。
                 メール内のリンクから認証を完了してください。
               </p>
@@ -102,16 +102,16 @@ export default function Signup() {
             <h2 className="text-xl font-semibold">新規登録</h2>
 
             {error && (
-              <div className="p-2 rounded text-sm bg-red-50 text-red-800">{error}</div>
+              <div className="p-2 rounded-sm text-sm bg-red-50 text-red-800">{error}</div>
             )}
 
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">メール</label>
+              <label className="text-sm text-(--muted)">メール</label>
               <Input value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">パスワード</label>
+              <label className="text-sm text-(--muted)">パスワード</label>
               <Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
             </div>
 

@@ -68,25 +68,25 @@ export default function Invoices() {
       <h2 className="text-xl font-semibold">売上</h2>
 
       <Card>
-        <CardHeader className="p-4 border-b border-[var(--border)]">新規作成</CardHeader>
+        <CardHeader className="p-4 border-b border-(--border)">新規作成</CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3 max-w-3xl">
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">売上名</label>
+              <label className="text-sm text-(--muted)">売上名</label>
               <Input
                 value={form.client}
                 onChange={(e) => setForm({ ...form, client: e.target.value })}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">金額</label>
+              <label className="text-sm text-(--muted)">金額</label>
               <Input
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">発行日</label>
+              <label className="text-sm text-(--muted)">発行日</label>
               <Input
                 type="date"
                 value={form.issueDate}
@@ -101,18 +101,18 @@ export default function Invoices() {
       </Card>
 
       <Card>
-        <CardHeader className="p-4 border-b border-[var(--border)]">一覧</CardHeader>
+        <CardHeader className="p-4 border-b border-(--border)">一覧</CardHeader>
         <CardContent>
           <div className="overflow-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-[#101a16]">
-                  {/* <th className="text-left p-2 border-b border-[var(--border)]">ID</th> */}
-                  <th className="text-left p-2 border-b border-[var(--border)]">売上名</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">金額</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">発行日</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">状態</th>
-                  <th className="p-2 border-b border-[var(--border)] w-28 text-right">操作</th>
+                  {/* <th className="text-left p-2 border-b border-(--border)">ID</th> */}
+                  <th className="text-left p-2 border-b border-(--border)">売上名</th>
+                  <th className="text-left p-2 border-b border-(--border)">金額</th>
+                  <th className="text-left p-2 border-b border-(--border)">発行日</th>
+                  <th className="text-left p-2 border-b border-(--border)">状態</th>
+                  <th className="p-2 border-b border-(--border) w-28 text-right">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -150,7 +150,7 @@ export default function Invoices() {
                 ))}
                 {list.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-3 text-[var(--muted)]">
+                    <td colSpan={6} className="p-3 text-(--muted)">
                       データなし
                     </td>
                   </tr>

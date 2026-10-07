@@ -143,8 +143,8 @@ function PieChart({ rows, size=220 }:{ rows:CatRow[]; size?:number }){
       <div className="space-y-1">
         {real.slice(0,8).map((r,i)=>(
           <div key={r.name} className="text-sm flex items-center gap-2">
-            <span className="w-3 h-3 inline-block rounded" style={{background: PIE_COLORS[i % PIE_COLORS.length]}}/>
-            <span className="w-28 truncate text-[var(--muted)]" title={r.name}>{r.name}</span>
+            <span className="w-3 h-3 inline-block rounded-sm" style={{background: PIE_COLORS[i % PIE_COLORS.length]}}/>
+            <span className="w-28 truncate text-(--muted)" title={r.name}>{r.name}</span>
             <span className="font-medium">{fmtYen(r.amount)}</span>
           </div>
         ))}
@@ -182,13 +182,13 @@ export default function Dashboard(){
       <div className="flex items-center gap-3">
         <h2 className="text-xl font-semibold">ダッシュボード</h2>
         <div className="ml-auto flex items-center gap-2">
-          <select className="border rounded px-2 py-1" value={year} onChange={e=>setYear(Number(e.target.value))}>
+          <select className="border rounded-sm px-2 py-1" value={year} onChange={e=>setYear(Number(e.target.value))}>
             {Array.from({length:8}).map((_,i)=>now.getFullYear()-i).map(y=><option key={y} value={y}>{y}</option>)}
           </select>
-          <select className="border rounded px-2 py-1" value={month} onChange={e=>setMonth(Number(e.target.value))}>
+          <select className="border rounded-sm px-2 py-1" value={month} onChange={e=>setMonth(Number(e.target.value))}>
             {[...Array(12)].map((_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}
           </select>
-          <span className="text-sm text-[var(--muted)]">{loading ? '更新中…' : ''}</span>
+          <span className="text-sm text-(--muted)">{loading ? '更新中…' : ''}</span>
         </div>
       </div>
 
@@ -210,7 +210,7 @@ export default function Dashboard(){
                 {fmtYen(c.value)}
               </div>
               <div className={`mt-2 text-xs font-medium ${c.pct>=0 ? 'text-green-600' : 'text-rose-600'}`}>
-                {`${sign(c.pct)}%`} <span className="text-[var(--muted)] font-normal">than last month</span>
+                {`${sign(c.pct)}%`} <span className="text-(--muted) font-normal">than last month</span>
               </div>
             </CardContent>
           </Card>
@@ -225,13 +225,13 @@ export default function Dashboard(){
             <CardContent>
               {data?.trend?.months?.length
                 ? (<div className="w-full flex justify-center"><LineChart months={data.trend.months} a={data.trend.sales} b={data.trend.expenses} /></div>)
-                : <div className="text-sm text-[var(--muted)]">読込中…</div>}
-              <div className="mt-2 flex items-center gap-4 text-xs text-[var(--muted)]">
+                : <div className="text-sm text-(--muted)">読込中…</div>}
+              <div className="mt-2 flex items-center gap-4 text-xs text-(--muted)">
                 <span className="inline-flex items-center gap-1">
-                  <span className="w-3 h-3 inline-block rounded" style={{ background: '#0ea5e9' }}></span>売上
+                  <span className="w-3 h-3 inline-block rounded-sm" style={{ background: '#0ea5e9' }}></span>売上
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="w-3 h-3 inline-block rounded" style={{ background: '#ef4444' }}></span>経費
+                  <span className="w-3 h-3 inline-block rounded-sm" style={{ background: '#ef4444' }}></span>経費
                 </span>
               </div>
             </CardContent>
@@ -242,7 +242,7 @@ export default function Dashboard(){
             <CardContent>
               {data?.byCategory?.length
                 ? <PieChart rows={data.byCategory} />
-                : <div className="text-sm text-[var(--muted)]">読込中…</div>}
+                : <div className="text-sm text-(--muted)">読込中…</div>}
             </CardContent>
           </Card>
         </div>
@@ -253,7 +253,7 @@ export default function Dashboard(){
             <CardContent>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-[var(--muted)]">
+                  <tr className="text-(--muted)">
                     <th className="text-left">日付</th>
                     <th className="text-left">取引先</th>
                     <th className="text-right">金額</th>
@@ -279,7 +279,7 @@ export default function Dashboard(){
             <CardContent>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-[var(--muted)]">
+                  <tr className="text-(--muted)">
                     <th className="text-left">日付</th>
                     <th className="text-left">取引先</th>
                     <th className="text-right">金額</th>
@@ -309,7 +309,7 @@ export default function Dashboard(){
                     {data.alerts.map((a,idx)=>(<li key={idx}>{a.message}</li>))}
                   </ul>
                 )
-                : <div className="text-sm text-[var(--muted)]">アラートはありません</div>}
+                : <div className="text-sm text-(--muted)">アラートはありません</div>}
             </CardContent>
           </Card>
         </div>

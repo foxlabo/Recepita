@@ -82,29 +82,29 @@ export default function Login() {
         <CardContent>
           {/* バナー表示 */}
           {changed === '1' && (
-            <div className="mt-4 mb-2 p-3 rounded text-sm bg-green-50 text-green-800">
+            <div className="mt-4 mb-2 p-3 rounded-sm text-sm bg-green-50 text-green-800">
               メール認証が完了しました。ログインしてください。
             </div>
           )}
           {verified === '1' && (
-            <div className="mt-4 mb-2 p-3 rounded text-sm bg-green-50 text-green-800">
+            <div className="mt-4 mb-2 p-3 rounded-sm text-sm bg-green-50 text-green-800">
               メール確認が完了しました。ログインしてください。
             </div>
           )}
           {changed === '0' && reason === 'expired' && (
-            <div className="mt-4 mb-2 p-3 rounded text-sm bg-yellow-50 text-yellow-800">
+            <div className="mt-4 mb-2 p-3 rounded-sm text-sm bg-yellow-50 text-yellow-800">
               認証リンクの有効期限が切れています。再送してからお試しください。
             </div>
           )}
           {deleted === '1' && (
-            <div className="mt-4 mb-2 p-3 rounded text-sm bg-green-50 text-green-800">
+            <div className="mt-4 mb-2 p-3 rounded-sm text-sm bg-green-50 text-green-800">
               アカウントを削除しました。ご利用ありがとうございました。
             </div>
           )}
 
           {/* エラー表示 */}
           {error && (
-            <div className="mt-4 mb-2 p-3 rounded text-sm bg-red-50 text-red-800">
+            <div className="mt-4 mb-2 p-3 rounded-sm text-sm bg-red-50 text-red-800">
               {error}
             </div>
           )}
@@ -113,12 +113,12 @@ export default function Login() {
             <h2 className="text-xl font-semibold">ログイン</h2>
 
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">メール</label>
+              <label className="text-sm text-(--muted)">メール</label>
               <Input value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-[var(--muted)]">パスワード</label>
+              <label className="text-sm text-(--muted)">パスワード</label>
               <Input
                 type="password"
                 value={pw}

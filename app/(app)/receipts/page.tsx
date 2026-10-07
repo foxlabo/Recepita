@@ -223,22 +223,22 @@ export default function ReceiptsList() {
 
       {/* フィルター */}
       <Card>
-        <CardHeader className="p-4 border-b border-[var(--border)]">フィルター</CardHeader>
+        <CardHeader className="p-4 border-b border-(--border)">フィルター</CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-3">
             <div>
-              <span className="text-sm mr-2 text-[var(--muted)]">年</span>
-              <select className="border rounded px-2 py-1" value={year} onChange={e => { setPage(1); setYear(Number(e.target.value)); }}>
+              <span className="text-sm mr-2 text-(--muted)">年</span>
+              <select className="border rounded-sm px-2 py-1" value={year} onChange={e => { setPage(1); setYear(Number(e.target.value)); }}>
                 {yearOptions.map(y => (<option key={y} value={y}>{y}</option>))}
               </select>
             </div>
             <div>
-              <span className="text-sm mr-2 text-[var(--muted)]">月</span>
-              <select className="border rounded px-2 py-1" value={month} onChange={e => { setPage(1); setMonth(Number(e.target.value)); }}>
+              <span className="text-sm mr-2 text-(--muted)">月</span>
+              <select className="border rounded-sm px-2 py-1" value={month} onChange={e => { setPage(1); setMonth(Number(e.target.value)); }}>
                 {monthOptions.map(m => (<option key={m} value={m}>{m}</option>))}
               </select>
             </div>
-            <div className="text-sm text-[var(--muted)] ml-auto">
+            <div className="text-sm text-(--muted) ml-auto">
               件数: {total}（ページ {page}/{totalPages}）
             </div>
           </div>
@@ -247,33 +247,33 @@ export default function ReceiptsList() {
 
       {/* 一覧 + エクスポート */}
       <Card>
-        <CardHeader className="p-4 border-b border-[var(--border)]">
+        <CardHeader className="p-4 border-b border-(--border)">
           <div className="flex items-center justify-between">
             <div>一覧（編集可）</div>
             <Button variant="outline" onClick={() => setExportOpen(v => !v)}>エクスポート</Button>
           </div>
 
           {exportOpen && (
-            <div className="mt-3 rounded border p-3 bg-gray-50 dark:bg-[#0b1110]">
+            <div className="mt-3 rounded-sm border p-3 bg-gray-50 dark:bg-[#0b1110]">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-[var(--muted)]">開始</span>
-                  <select className="border rounded px-2 py-1" value={fromYear} onChange={e=>setFromYear(Number(e.target.value))}>
+                  <span className="text-sm text-(--muted)">開始</span>
+                  <select className="border rounded-sm px-2 py-1" value={fromYear} onChange={e=>setFromYear(Number(e.target.value))}>
                     {yearOptions.map(y => (<option key={y} value={y}>{y}</option>))}
                   </select>
                   <span>年</span>
-                  <select className="border rounded px-2 py-1" value={fromMonth} onChange={e=>setFromMonth(Number(e.target.value))}>
+                  <select className="border rounded-sm px-2 py-1" value={fromMonth} onChange={e=>setFromMonth(Number(e.target.value))}>
                     {monthOptions.map(m => (<option key={m} value={m}>{m}</option>))}
                   </select>
                   <span>月</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-[var(--muted)]">終了</span>
-                  <select className="border rounded px-2 py-1" value={toYear} onChange={e=>setToYear(Number(e.target.value))}>
+                  <span className="text-sm text-(--muted)">終了</span>
+                  <select className="border rounded-sm px-2 py-1" value={toYear} onChange={e=>setToYear(Number(e.target.value))}>
                     {yearOptions.map(y => (<option key={y} value={y}>{y}</option>))}
                   </select>
                   <span>年</span>
-                  <select className="border rounded px-2 py-1" value={toMonth} onChange={e=>setToMonth(Number(e.target.value))}>
+                  <select className="border rounded-sm px-2 py-1" value={toMonth} onChange={e=>setToMonth(Number(e.target.value))}>
                     {monthOptions.map(m => (<option key={m} value={m}>{m}</option>))}
                   </select>
                   <span>月</span>
@@ -282,7 +282,7 @@ export default function ReceiptsList() {
                   <Button onClick={onExportCsv} disabled={exporting}>{exporting ? '出力中…' : 'CSV出力'}</Button>
                 </div>
               </div>
-              <div className="text-xs text-[var(--muted)] mt-2">
+              <div className="text-xs text-(--muted) mt-2">
                 ※ 指定期間（開始〜終了）の全件をCSVに出力します。編集内容は「一括更新」反映後にエクスポートしてください。
               </div>
             </div>
@@ -294,16 +294,16 @@ export default function ReceiptsList() {
             <table className="w-full border-collapse text-sm min-w-[980px]">
               <thead>
                 <tr className="bg-gray-50 dark:bg-[#101a16]">
-                  <th className="p-2 border-b border-[var(--border)] w-8 align-middle text-center">
+                  <th className="p-2 border-b border-(--border) w-8 align-middle text-center">
                     <input type="checkbox" onChange={onCheckAll} />
                   </th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">登録日</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">取引日</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">金額</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">取引先</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">区分</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">品目</th>
-                  <th className="text-left p-2 border-b border-[var(--border)]">メモ</th>
+                  <th className="text-left p-2 border-b border-(--border)">登録日</th>
+                  <th className="text-left p-2 border-b border-(--border)">取引日</th>
+                  <th className="text-left p-2 border-b border-(--border)">金額</th>
+                  <th className="text-left p-2 border-b border-(--border)">取引先</th>
+                  <th className="text-left p-2 border-b border-(--border)">区分</th>
+                  <th className="text-left p-2 border-b border-(--border)">品目</th>
+                  <th className="text-left p-2 border-b border-(--border)">メモ</th>
                 </tr>
               </thead>
               <tbody>
@@ -368,7 +368,7 @@ export default function ReceiptsList() {
                   );
                 })}
                 {rows.length === 0 && (
-                  <tr><td colSpan={8} className="p-3 text-[var(--muted)]">{loading ? '読込中…' : 'データなし'}</td></tr>
+                  <tr><td colSpan={8} className="p-3 text-(--muted)">{loading ? '読込中…' : 'データなし'}</td></tr>
                 )}
               </tbody>
             </table>
@@ -376,7 +376,7 @@ export default function ReceiptsList() {
 
          {/* ページング */}
 <div className="flex items-center justify-between mt-3">
-  <div className="text-sm text-[var(--muted)]">{loading ? '読込中…' : ''}</div>
+  <div className="text-sm text-(--muted)">{loading ? '読込中…' : ''}</div>
   <div className="flex items-center gap-2">
     {/* 先頭 / 前へ */}
     <button
@@ -404,7 +404,7 @@ export default function ReceiptsList() {
       <button
   key={p}
   onClick={() => setPage(p)}
-  className="px-3 py-1 rounded border bg-white border-gray-300"
+  className="px-3 py-1 rounded-sm border bg-white border-gray-300"
   style={{ color: '#111' }}  // ← これで見えるなら外部CSSが原因
 >
   {p}

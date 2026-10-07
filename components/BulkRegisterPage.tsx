@@ -775,7 +775,7 @@ export default function BulkRegisterPage({
             onDrop={onDrop}
             onDragOver={onDragOver}
             onDragEnter={onDragEnter}
-            className="border-2 border-dashed rounded-xl p-8 text-center text-sm text-[var(--muted)]"
+            className="border-2 border-dashed rounded-xl p-8 text-center text-sm text-(--muted)"
           >
             ここにファイルをドラッグ&ドロップ（複数可）／PDFも可（複数ページPDFは自動でページ分割）
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
@@ -784,7 +784,7 @@ export default function BulkRegisterPage({
               <div className="flex items-center gap-2">
                 <span>形式</span>
                 <select
-                  className="border rounded px-2 py-1"
+                  className="border rounded-sm px-2 py-1"
                   value={model}
                   onChange={(e) => setModel(e.target.value as OcrModel)}
                 >
@@ -797,7 +797,7 @@ export default function BulkRegisterPage({
               <div className="flex items-center gap-2">
                 <span>モード</span>
                 <select
-                  className="border rounded px-2 py-1"
+                  className="border rounded-sm px-2 py-1"
                   value={mode}
                   onChange={(e) => setMode(e.target.value as Mode)}
                 >
@@ -814,29 +814,29 @@ export default function BulkRegisterPage({
               >
                 解析
               </Button>
-              <span className="text-[var(--muted)]">状態: {statusText}</span>
+              <span className="text-(--muted)">状態: {statusText}</span>
             </div>
           </div>
 
           {files.length > 0 && (
             <div className="mt-3">
-              <div className="text-xs text-[var(--muted)] mb-2">
+              <div className="text-xs text-(--muted) mb-2">
                 追加済みファイル（{files.length}）
               </div>
               <div className="flex flex-wrap gap-3">
                 {previews.map((p, idx) => (
                   <div
                     key={p.key}
-                    className="relative border rounded-lg p-2 pr-8 flex items-center gap-2 bg-white shadow-sm"
+                    className="relative border rounded-lg p-2 pr-8 flex items-center gap-2 bg-white shadow-xs"
                   >
                     {p.url ? (
                       <img
                         src={p.url}
                         alt=""
-                        className="w-10 h-10 object-cover rounded"
+                        className="w-10 h-10 object-cover rounded-sm"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded bg-[var(--muted-bg)] grid place-items-center text-lg">
+                      <div className="w-10 h-10 rounded-sm bg-(--muted-bg) grid place-items-center text-lg">
                         📄
                       </div>
                     )}
@@ -847,14 +847,14 @@ export default function BulkRegisterPage({
                       >
                         {p.name}
                       </div>
-                      <div className="text-[var(--muted)]">
+                      <div className="text-(--muted)">
                         {Math.max(1, Math.round(p.size / 1024))}KB
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeFile(idx)}
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-300 hover:bg-gray-400 text-xs leading-5 text-white shadow"
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-300 hover:bg-gray-400 text-xs leading-5 text-white shadow-sm"
                     >
                       ×
                     </button>
@@ -884,7 +884,7 @@ export default function BulkRegisterPage({
       </Card>
 
       <Card className="mt-2">
-        <CardHeader className="p-4 border-b border-[var(--border)] flex items-center justify-between">
+        <CardHeader className="p-4 border-b border-(--border) flex items-center justify-between">
           <div>下書き</div>
           <div className="flex items-center gap-2">
             <Button size="md" variant="outline" onClick={onClearDrafts}>
@@ -897,8 +897,8 @@ export default function BulkRegisterPage({
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm border border-[var(--border)] rounded-lg overflow-hidden">
-              <thead className="bg-[var(--muted-bg)] border-b border-[var(--border)]">
+            <table className="w-full text-sm border border-(--border) rounded-lg overflow-hidden">
+              <thead className="bg-(--muted-bg) border-b border-(--border)">
                 <tr className="text-left">
                   <th className="p-2">登録日</th>
                   <th className="p-2">取引日</th>
@@ -912,7 +912,7 @@ export default function BulkRegisterPage({
               </thead>
               <tbody>
                 {(drafts ?? []).map((x, i) => (
-                  <tr key={i} className="border-b border-[var(--border)]">
+                  <tr key={i} className="border-b border-(--border)">
                     <td className="p-2 whitespace-nowrap">
                       {x.registeredDate}
                     </td>
@@ -943,7 +943,7 @@ export default function BulkRegisterPage({
                 ))}
                 {(!drafts || drafts.length === 0) && (
                   <tr>
-                    <td colSpan={8} className="p-3 text-[var(--muted)]">
+                    <td colSpan={8} className="p-3 text-(--muted)">
                       下書きなし
                     </td>
                   </tr>

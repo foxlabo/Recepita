@@ -12,7 +12,7 @@ export default function Button({ className, variant='primary', size='md', asChil
   const base = 'inline-flex items-center justify-center font-medium rounded-md transition-colors';
   const styles = {
     primary: 'bg-recepita hover:bg-recepita-dark text-white',
-    outline: 'border border-[var(--border)] bg-[var(--card)] hover:bg-gray-50 text-[var(--fg)] dark:hover:bg-[#101a16]',
+    outline: 'border border-(--border) bg-(--card) hover:bg-gray-50 text-(--fg) dark:hover:bg-[#101a16]',
     ghost:   'hover:bg-gray-100 dark:hover:bg-[#101a16]',
   }[variant];
   const sizes = {

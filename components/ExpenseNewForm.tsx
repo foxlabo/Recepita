@@ -124,37 +124,37 @@ export default function ExpenseNewForm() {
   };
 
   return (
-    <div className="bg-white rounded shadow-sm border p-4 mb-6">
+    <div className="bg-white rounded-sm shadow-xs border p-4 mb-6">
       <div className="text-lg font-semibold mb-3">新規登録</div>
 
       {/* 1行目：日付・金額・取引先・区分・支払方法 */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
         <label className="text-sm block">
           <span className="block mb-1">日付</span>
-          <input className="w-full border rounded px-2 py-2" value={date} onChange={(e)=>setDate(e.target.value)} placeholder="YYYY-MM-DD" />
+          <input className="w-full border rounded-sm px-2 py-2" value={date} onChange={(e)=>setDate(e.target.value)} placeholder="YYYY-MM-DD" />
         </label>
         <label className="text-sm block">
           <span className="block mb-1">金額</span>
-          <input type="number" className="w-full border rounded px-2 py-2" value={amount} onChange={(e)=>setAmount(e.target.value)} />
+          <input type="number" className="w-full border rounded-sm px-2 py-2" value={amount} onChange={(e)=>setAmount(e.target.value)} />
         </label>
         <label className="text-sm block">
           <span className="block mb-1">取引先</span>
-          <input className="w-full border rounded px-2 py-2" value={vendor} onChange={(e)=>setVendor(e.target.value)} />
+          <input className="w-full border rounded-sm px-2 py-2" value={vendor} onChange={(e)=>setVendor(e.target.value)} />
         </label>
         <label className="text-sm block">
           <span className="block mb-1">区分</span>
-          <input className="w-full border rounded px-2 py-2" value={category} onChange={(e)=>setCategory(e.target.value)} placeholder="旅費交通費/通信費/消耗品/食料品 など" />
+          <input className="w-full border rounded-sm px-2 py-2" value={category} onChange={(e)=>setCategory(e.target.value)} placeholder="旅費交通費/通信費/消耗品/食料品 など" />
         </label>
         <label className="text-sm block">
           <span className="block mb-1">支払方法</span>
-          <input className="w-full border rounded px-2 py-2" value={paymentMethod} onChange={(e)=>setPaymentMethod(e.target.value)} placeholder="現金 / クレカ / 電子マネー など" />
+          <input className="w-full border rounded-sm px-2 py-2" value={paymentMethod} onChange={(e)=>setPaymentMethod(e.target.value)} placeholder="現金 / クレカ / 電子マネー など" />
         </label>
       </div>
 
       {/* 2行目：品目（テキスト） */}
       <div className="mt-3">
         <label className="text-sm block mb-1">品目（`商品名:金額` をカンマ / 改行区切り）</label>
-        <textarea className="w-full border rounded px-2 py-2" rows={2}
+        <textarea className="w-full border rounded-sm px-2 py-2" rows={2}
                   placeholder="ジャスミン:59, スイートパインブロ:289, ごま油香る うま塩き:258, 梨【MK】:238"
                   value={itemsText} onChange={(e)=>setItemsText(e.target.value)} />
       </div>
@@ -162,18 +162,18 @@ export default function ExpenseNewForm() {
       {/* 3行目：メモ */}
       <div className="mt-3">
         <label className="text-sm block mb-1">メモ</label>
-        <input className="w-full border rounded px-2 py-2" value={memo} onChange={(e)=>setMemo(e.target.value)} />
+        <input className="w-full border rounded-sm px-2 py-2" value={memo} onChange={(e)=>setMemo(e.target.value)} />
       </div>
 
       {/* ボタン列 */}
       <div className="mt-4 flex items-center gap-3">
         <input type="file" multiple onChange={(e)=>setFiles(Array.from(e.target.files||[]))} />
-        <button onClick={onParse} disabled={!files.length || status==='processing'} className="px-3 py-2 border rounded">
+        <button onClick={onParse} disabled={!files.length || status==='processing'} className="px-3 py-2 border rounded-sm">
           解析
         </button>
         <div className="ml-auto flex items-center gap-3">
           <div className="text-sm text-gray-500">合計(品目): {totalByItems.toLocaleString()} 円</div>
-          <button onClick={onAdd} className="px-4 py-2 bg-black text-white rounded">追加</button>
+          <button onClick={onAdd} className="px-4 py-2 bg-black text-white rounded-sm">追加</button>
         </div>
       </div>
     </div>
