@@ -188,7 +188,7 @@ function SingleRegisterTab({ onAppend }: { onAppend: (row: DraftPayload) => Prom
               type="button"
               disabled={!selectedFile || busy !== 'idle'}
               onClick={() => selectedFile && handleFile(selectedFile)}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-700 hover:bg-green-800 text-white"
             >
               解析
             </Button>

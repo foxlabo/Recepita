@@ -6,8 +6,10 @@
 
 @theme {
   --color-recepita-50: #ecfdf5;
-  --color-recepita: #16a34a;
-  --color-recepita-dark: #15803d;
+  /* green-700 / green-800: white text on them meets WCAG AA (5.0:1 / 7.1:1);
+     the former green-600 only reached 3.3:1. */
+  --color-recepita: #15803d;
+  --color-recepita-dark: #166534;
 
   --radius-xl: 12px;
 
