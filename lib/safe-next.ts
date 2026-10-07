@@ -18,6 +18,9 @@ export function safeNextPath(raw: string | null | undefined, fallback = '/dashbo
     if (url.pathname === '/login' || url.pathname === '/signup' || url.pathname.startsWith('/api/')) {
       return fallback;
     }
+    // Dot segments can normalise into "//host" ("/..//evil" → "//evil"),
+    // which the browser would treat as a protocol-relative URL.
+    if (url.pathname.startsWith('//')) return fallback;
     return url.pathname + url.search + url.hash;
   } catch {
     return fallback;
