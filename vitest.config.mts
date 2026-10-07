@@ -22,6 +22,20 @@ export default defineConfig({
           env: { TZ: 'America/Los_Angeles' },
         },
       },
+      {
+        extends: true,
+        test: {
+          name: 'integration',
+          include: ['tests/integration/**/*.test.ts'],
+          environment: 'node',
+          globalSetup: ['tests/integration/global-setup.ts'],
+          setupFiles: ['tests/integration/setup-env.ts'],
+          // One database: run files one after another.
+          fileParallelism: false,
+          testTimeout: 30_000,
+          hookTimeout: 60_000,
+        },
+      },
     ],
   },
 });
