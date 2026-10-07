@@ -23,7 +23,13 @@ export default function Invoices() {
 
   async function load() {
     const res = await fetch('/api/invoices');
-    setList(await res.json());
+    // セッション失効時は API が 401 を返す → Cookie を整理してログイン画面へ
+    if (res.status === 401) {
+      location.href = '/api/auth/expired';
+      return;
+    }
+    const data = await res.json().catch(() => []);
+    setList(Array.isArray(data) ? data : []);
   }
   useEffect(() => {
     load();
