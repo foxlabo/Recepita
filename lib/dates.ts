@@ -35,12 +35,34 @@ function isValidYmd(y: number, m: number, d: number): boolean {
 const DATE_ONLY_RE = /^(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?$/;
 /** ISO 8601 date-time (an instant), e.g. 2026-09-30T23:30:00+09:00. */
 const ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/;
+/** Explicit UTC offset at the end of an ISO date-time ("Z", "+09:00", "-0500"). */
+const ISO_OFFSET_RE = /(?:Z|[+-]\d{2}(?::?\d{2})?)$/i;
+
+/**
+ * ISO date-time → instant (null when invalid). A date-time without an offset
+ * is JST wall-clock time; `new Date()` would read it in the machine's zone.
+ */
+function parseIsoDateTime(s: string): Date | null {
+  const iso = s.replace(' ', 'T');
+  const t = new Date(ISO_OFFSET_RE.test(iso) ? iso : `${iso}+09:00`);
+  return Number.isNaN(t.getTime()) ? null : t;
+}
+
+/** Date-like value → Date (ISO date-time strings via parseIsoDateTime). */
+function toDate(value: DateLike): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' && ISO_DATETIME_RE.test(value.trim())) {
+    return parseIsoDateTime(value.trim()) ?? new Date(Number.NaN);
+  }
+  return new Date(value);
+}
 
 /**
  * Normalise a calendar date to 'YYYY-MM-DD'.
  * Accepts 2026-09-30, 2026/9/30, 2026.9.30, 2026年9月30日 (also full-width
- * digits) and ISO date-times (converted to their JST date). Returns undefined
- * for anything else, including impossible dates such as 2026-02-30.
+ * digits) and ISO date-times (converted to their JST date; read as JST when
+ * they have no offset). Returns undefined for anything else, including
+ * impossible dates such as 2026-02-30.
  */
 export function normalizeDateString(input: unknown): string | undefined {
   if (input instanceof Date) return Number.isNaN(input.getTime()) ? undefined : formatDateJST(input);
@@ -55,8 +77,8 @@ export function normalizeDateString(input: unknown): string | undefined {
     return isValidYmd(y, mo, d) ? `${y}-${pad2(mo)}-${pad2(d)}` : undefined;
   }
   if (ISO_DATETIME_RE.test(s)) {
-    const t = new Date(s);
-    return Number.isNaN(t.getTime()) ? undefined : formatDateJST(t);
+    const t = parseIsoDateTime(s);
+    return t ? formatDateJST(t) : undefined;
   }
   return undefined;
 }
@@ -71,8 +93,9 @@ export function parseDateOnly(input: unknown): Date | null {
 
 /**
  * Parse a date sent by a client: a calendar date (see `normalizeDateString`)
- * becomes 00:00 UTC of that date; an ISO date-time or epoch milliseconds is
- * kept as that instant. Returns null when the value is not a valid date.
+ * becomes 00:00 UTC of that date; an ISO date-time (JST when it has no
+ * offset) or epoch milliseconds is kept as that instant. Returns null when
+ * the value is not a valid date.
  */
 export function parseDateInput(input: unknown): Date | null {
   if (input instanceof Date) return Number.isNaN(input.getTime()) ? null : input;
@@ -83,10 +106,7 @@ export function parseDateInput(input: unknown): Date | null {
   if (typeof input !== 'string') return null;
   const s = input.normalize('NFKC').trim();
   if (DATE_ONLY_RE.test(s)) return parseDateOnly(s);
-  if (ISO_DATETIME_RE.test(s)) {
-    const t = new Date(s);
-    return Number.isNaN(t.getTime()) ? null : t;
-  }
+  if (ISO_DATETIME_RE.test(s)) return parseIsoDateTime(s);
   return null;
 }
 
@@ -99,7 +119,7 @@ export function formatDateJST(value: DateLike | null | undefined): string {
   if (typeof value === 'string' && DATE_ONLY_RE.test(value.normalize('NFKC').trim())) {
     return normalizeDateString(value) ?? '';
   }
-  const t = value instanceof Date ? value : new Date(value);
+  const t = toDate(value);
   if (Number.isNaN(t.getTime())) return '';
   return new Date(t.getTime() + JST_OFFSET_MS).toISOString().slice(0, 10);
 }
@@ -111,7 +131,7 @@ export function todayJST(): string {
 
 /** JST year and month (1–12) of the given instant (default: now). */
 export function yearMonthJST(value: DateLike = new Date()): YearMonth {
-  const t = value instanceof Date ? value : new Date(value);
+  const t = toDate(value);
   const shifted = new Date(t.getTime() + JST_OFFSET_MS);
   return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth() + 1 };
 }
