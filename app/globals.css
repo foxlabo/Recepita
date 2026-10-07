@@ -1,16 +1,72 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+/* Dark mode = the `dark` class on <html> (set before paint by the inline
+   script in app/layout.tsx, toggled by components/ThemeToggle.tsx). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-recepita-50: #ecfdf5;
+  /* green-700 / green-800: white text on them meets WCAG AA (5.0:1 / 7.1:1);
+     the former green-600 only reached 3.3:1. */
+  --color-recepita: #15803d;
+  --color-recepita-dark: #166534;
+
+  --radius-xl: 12px;
+
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border, var(--color-gray-200, currentcolor));
+  }
+}
 
 /* Light theme tokens */
-:root{
-  --bg:#F9FAFB; --card:#FFFFFF; --fg:#1F2937; --muted:#6B7280; --border:#E5E7EB;
+:root {
+  --bg: #f9fafb;
+  --card: #ffffff;
+  --fg: #1f2937;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --muted-bg: #f3f4f6;
+  color-scheme: light;
 }
-/* Dark theme tokens */
-.dark{
-  --bg:#0D1512; --card:#0F1A17; --fg:#E6F4EE; --muted:#99B2A5; --border:rgba(153,178,165,.25);
+/* Dark theme tokens (native form controls / scrollbars follow color-scheme) */
+.dark {
+  --bg: #0d1512;
+  --card: #0f1a17;
+  --fg: #e6f4ee;
+  --muted: #99b2a5;
+  --border: rgba(153, 178, 165, 0.25);
+  --muted-bg: #101a16;
+  color-scheme: dark;
 }
 
-html,body{height:100%}
-body{background:var(--bg); color:var(--fg)}
-a{color:inherit}
+/* Element defaults live in the base layer so Tailwind utilities
+   (e.g. text-recepita on a link) can override them. */
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+  }
+  a {
+    color: inherit;
+  }
+}

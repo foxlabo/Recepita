@@ -2,11 +2,11 @@
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
 }
 
 model User {
@@ -19,15 +19,33 @@ model User {
   expenses      Expense[]
   draftExpenses DraftExpense[]
   invoices      Invoice[]
+  verificationTokens VerificationToken[]
   profile UserProfile?
   isEmailVerified Boolean @default(false)
+  /// Embedded in the session JWT (`sv` claim). Incrementing it revokes every
+  /// session issued for this user (password/email change, logout-all, deletion).
+  sessionVersion  Int     @default(0)
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFY // sign-up address confirmation
+  EMAIL_CHANGE // confirmation of a new address from the settings screen
 }
 
 model VerificationToken {
-  token     String   @id
+  id        String                @id @default(cuid())
+  /// SHA-256 (hex) of the token sent by e-mail; the raw token is never stored.
+  tokenHash String                @unique
+  type      VerificationTokenType
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+  /// Address the token was sent to (the new address for EMAIL_CHANGE).
   email     String
   expiresAt DateTime
+  createdAt DateTime              @default(now())
+
+  @@index([userId, type])
+  @@index([expiresAt])
 }
 
 model Expense {
@@ -48,7 +66,6 @@ model Expense {
   updatedAt     DateTime @updatedAt
 
   lineItems ExpenseItem[]
-  files     ReceiptFile[]
 
   @@index([userId, date])
 }
@@ -68,20 +85,6 @@ model ExpenseItem {
   @@index([expenseId])
 }
 
-model ReceiptFile {
-  id        String   @id @default(uuid())
-  storage   String
-  path      String
-  original  String
-  mime      String?
-  size      Int?
-  createdAt DateTime @default(now())
-
-  expense   Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
-  expenseId String?
-
-  @@index([expenseId])
-}
 
 model DraftExpense {
   id             String   @id @default(cuid())
@@ -142,3 +145,13 @@ model UserProfile {
 }
 
 
+
+/// Fixed-window rate-limit counters used by lib/rate-limit.ts.
+/// `key` is "<rule>:<sha256(identifier)>" so no raw IPs/e-mails are stored.
+model RateLimit {
+  key         String   @id
+  windowStart DateTime
+  count       Int
+
+  @@index([windowStart])
+}

@@ -1,63 +1,56 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth-server';
+import { withAuth } from '@/lib/auth-server';
+import { assertFound, readJson } from '@/lib/http';
+import { draftInputSchema, toDraftData } from '@/lib/drafts';
+import { idListSchema } from '@/lib/validation';
+import { formatDateJST } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// GET: list drafts (unauthorized when not logged in)
-export async function GET() {
-  const s = getSession();
-  if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 });
+// GET: list drafts
+export const GET = withAuth(async (_req, { session }) => {
   const rows = await prisma.draftExpense.findMany({
-    where: { userId: s.userId },
+    where: { userId: session.userId },
     orderBy: { createdAt: 'desc' },
   });
-  const items = rows.map(r => ({
+  const items = rows.map((r) => ({
     id: r.id,
-    registeredDate: r.registeredDate.toISOString().slice(0,10),
-    tradeDate: r.tradeDate.toISOString().slice(0,10),
+    registeredDate: formatDateJST(r.registeredDate),
+    tradeDate: formatDateJST(r.tradeDate),
     amount: r.amount,
     vendor: r.vendor,
     category: r.category ?? '',
     memo: r.memo ?? '',
-    itemsSummary: r.itemsSummary ?? ''
+    itemsSummary: r.itemsSummary ?? '',
   }));
   return NextResponse.json({ items });
-}
+});
 
-// POST: create one draft
-export async function POST(req: Request) {
-  const s = getSession();
-  if (!s) return NextResponse.json({ ok: false }, { status: 401 });
-  const b = await req.json();
+// POST: create one draft（登録日はサーバー側で付与）
+export const POST = withAuth(async (req, { session }) => {
+  const b = await readJson(req, draftInputSchema);
   const row = await prisma.draftExpense.create({
-    data: {
-      userId: s.userId,
-      registeredDate: new Date(),
-      tradeDate: new Date(b.tradeDate),
-      amount: Number(b.amount ?? 0),
-      vendor: String(b.vendor ?? '未設定'),
-      category: b.category || null,
-      memo: b.memo || null,
-      itemsSummary: b.itemsSummary || null,
-    }
+    data: toDraftData(session.userId, { ...b, registeredDate: new Date() }),
   });
   return NextResponse.json({ id: row.id });
-}
+});
+
+const deleteSchema = z.object({ ids: idListSchema });
 
 // DELETE: delete by ids (or all with all=true)
-export async function DELETE(req: Request) {
-  const s = getSession();
-  if (!s) return NextResponse.json({ ok: false }, { status: 401 });
+export const DELETE = withAuth(async (req, { session }) => {
   const url = new URL(req.url);
-  const all = url.searchParams.get('all') === 'true';
-  if (all) {
-    const result = await prisma.draftExpense.deleteMany({ where: { userId: s.userId } });
+  if (url.searchParams.get('all') === 'true') {
+    const result = await prisma.draftExpense.deleteMany({ where: { userId: session.userId } });
     return NextResponse.json({ ok: true, deleted: result.count });
   }
-  const { ids } = await req.json().catch(()=>({ ids: [] as string[] }));
-  if (!Array.isArray(ids) || ids.length === 0) return NextResponse.json({ ok: false, message: 'no ids' }, { status: 400 });
-  const result = await prisma.draftExpense.deleteMany({ where: { userId: s.userId, id: { in: ids } } });
+  const { ids } = await readJson(req, deleteSchema);
+  const result = await prisma.draftExpense.deleteMany({
+    where: { userId: session.userId, id: { in: ids } },
+  });
+  assertFound(result.count); // 存在しない / 他人の下書きのみ → 404
   return NextResponse.json({ ok: true, deleted: result.count });
-}
+});

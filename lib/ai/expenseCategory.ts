@@ -44,9 +44,7 @@ export type InferExpenseCategoryResult = {
   [key: string]: any;
 };
 
-export async function inferExpenseCategory(
-  input: InferExpenseCategoryInput
-): Promise<InferExpenseCategoryResult> {
+export async function inferExpenseCategory(input: InferExpenseCategoryInput): Promise<InferExpenseCategoryResult> {
   const base: InferExpenseCategoryResult = { ...(input.existingAi ?? {}) };
 
   // 既に category が入っていたら、それを尊重して何もしない

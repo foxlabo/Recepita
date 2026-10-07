@@ -1,46 +1,63 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth-server';
+import { jsonError, withAuth } from '@/lib/auth-server';
+import { MSG_NOT_FOUND, readJson } from '@/lib/http';
+import { dateInputSchema, expenseItemsSchema, int32Schema, optionalText } from '@/lib/validation';
+import { lineItemsOrder, toLineItemCreateData } from '@/lib/items';
+import { Prisma } from '@/lib/generated/prisma/client';
 
-// GET one
-export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const s = getSession();
-  if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 });
+export const runtime = 'nodejs';
 
+// GET one（本人のデータのみ）
+export const GET = withAuth<{ id: string }>(async (_req, { session, params }) => {
   const e = await prisma.expense.findFirst({
-    where: { id: params.id, userId: s.userId },
-    // items はスカラなので include しない。必要なら select で拾う。
-    include: { lineItems: true, files: true },
+    where: { id: params.id, userId: session.userId },
+    include: { lineItems: { orderBy: lineItemsOrder } },
   });
-
-  if (!e) return NextResponse.json({ ok: false, message: 'not found' }, { status: 404 });
+  if (!e) return jsonError(404, MSG_NOT_FOUND);
   return NextResponse.json(e);
-}
+});
 
-// PUT update
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const s = getSession();
-  if (!s) return NextResponse.json({ ok: false, message: 'unauthorized' }, { status: 401 });
+const updateSchema = z.object({
+  date: dateInputSchema,
+  amount: z.coerce.number({ error: '金額は数値で入力してください。' }).pipe(int32Schema),
+  vendor: z.string().max(500).nullish(),
+  memo: optionalText(5000),
+  category: optionalText(200),
+  paymentMethod: optionalText(100),
+  /** 指定時は ExpenseItem を置き換える（null / [] で全削除、省略時は変更なし） */
+  items: expenseItemsSchema.nullish(),
+  subtotal: z.coerce.number().pipe(int32Schema).nullish(),
+  tax: z.coerce.number().pipe(int32Schema).nullish(),
+  total: z.coerce.number().pipe(int32Schema).nullish(),
+});
 
-  const body = await request.json();
+// PUT update（userId で絞るので他人の行は更新できない → 404）
+export const PUT = withAuth<{ id: string }>(async (req, { session, params }) => {
+  const body = await readJson(req, updateSchema);
 
   const updated = await prisma.expense.update({
-    where: { id: params.id, userId: s.userId },
+    where: { id: params.id, userId: session.userId },
     data: {
-      date: new Date(body.date),
-      amount: Number(body.amount) || 0,
-      vendor: String(body.vendor ?? ''),
+      date: body.date,
+      amount: body.amount,
+      vendor: body.vendor ?? '',
       memo: body.memo ?? null,
       category: body.category ?? null,
       paymentMethod: body.paymentMethod ?? null,
-
-      // もし items/subtotal/tax/total も更新するならここで
-      items: body.items ?? undefined,
-      subtotal: body.subtotal != null ? Number(body.subtotal) : undefined,
-      tax: body.tax != null ? Number(body.tax) : undefined,
-      total: body.total != null ? Number(body.total) : undefined,
+      // 品目は ExpenseItem が正。旧 JSON(items) は表示元にならないよう消す
+      ...(body.items !== undefined
+        ? {
+            items: Prisma.DbNull,
+            lineItems: { deleteMany: {}, create: toLineItemCreateData(body.items ?? []) },
+          }
+        : {}),
+      subtotal: body.subtotal ?? undefined,
+      tax: body.tax ?? undefined,
+      total: body.total ?? undefined,
     },
   });
 
   return NextResponse.json({ ok: true, id: updated.id });
-}
+});

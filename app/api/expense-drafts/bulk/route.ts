@@ -1,30 +1,21 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth-server';
+import { withAuth } from '@/lib/auth-server';
+import { readJson } from '@/lib/http';
+import { draftInputSchema, toDraftData } from '@/lib/drafts';
 
 export const runtime = 'nodejs';
 
+const bodySchema = z.object({
+  drafts: z.array(draftInputSchema).min(1, '下書きがありません。').max(500, '一度に登録できる件数を超えています。'),
+});
+
 // POST: bulk create drafts
-export async function POST(req: Request) {
-  const s = getSession();
-  if (!s) return NextResponse.json({ ok: false }, { status: 401 });
-
-  const { drafts } = await req.json().catch(() => ({ drafts: [] as any[] }));
-  if (!Array.isArray(drafts) || drafts.length === 0) {
-    return NextResponse.json({ ok: false, message: 'no drafts' }, { status: 400 });
-  }
-
-  const data = drafts.map((b: any) => ({
-    userId: s.userId,
-    registeredDate: new Date(b.registeredDate ?? new Date()),
-    tradeDate: new Date(b.tradeDate),
-    amount: Number(b.amount ?? 0),
-    vendor: String(b.vendor ?? '未設定'),
-    category: b.category || null,
-    memo: b.memo || null,
-    itemsSummary: b.itemsSummary || null,
-  }));
-
-  const ret = await prisma.draftExpense.createMany({ data });
+export const POST = withAuth(async (req, { session }) => {
+  const { drafts } = await readJson(req, bodySchema);
+  const ret = await prisma.draftExpense.createMany({
+    data: drafts.map((b) => toDraftData(session.userId, b)),
+  });
   return NextResponse.json({ ok: true, created: ret.count });
-}
+});

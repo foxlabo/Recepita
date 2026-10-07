@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
-
-export const dynamic = 'force-dynamic';
+import { apiErrorMessage, redirectIfUnauthorized } from '@/lib/api-client';
+import { formatDateJST } from '@/lib/dates';
 
 type Profile = {
   lastName?: string | null;
@@ -32,8 +32,7 @@ export default function Settings() {
   // account tab states
   const [pw, setPw] = useState({ current: '', next: '' });
   const [newEmail, setNewEmail] = useState('');
-  const [emailReqState, setEmailReqState] =
-    useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [emailReqState, setEmailReqState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   // ★ アカウント削除用
   const [deleteEmail, setDeleteEmail] = useState('');
@@ -47,9 +46,13 @@ export default function Settings() {
     (async () => {
       try {
         const res = await fetch('/api/settings/profile', { cache: 'no-store' });
+        if (redirectIfUnauthorized(res)) return;
+        if (!res.ok) {
+          alert(await apiErrorMessage(res, 'プロフィールの取得に失敗しました。'));
+          return;
+        }
         const p = await res.json();
-        const toDateInput = (d?: string) =>
-          d ? new Date(d).toISOString().slice(0, 10) : '';
+        const toDateInput = (d?: string) => formatDateJST(d);
         setProfile({
           ...p,
           birthDate: p?.birthDate ? toDateInput(p.birthDate) : '',
@@ -70,12 +73,7 @@ export default function Settings() {
             ['profile', 'マイページ'],
           ] as const
         ).map(([k, label]) => (
-          <Button
-            key={k}
-            variant={tab === k ? 'primary' : 'outline'}
-            size="md"
-            onClick={() => setTab(k as any)}
-          >
+          <Button key={k} variant={tab === k ? 'primary' : 'outline'} size="md" onClick={() => setTab(k)}>
             {label}
           </Button>
         ))}
@@ -90,22 +88,22 @@ export default function Settings() {
               <div className="grid gap-3">
                 <h3 className="font-semibold text-lg">パスワード変更</h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="settings-current-password">
                     現在のパスワード
                   </label>
                   <Input
+                    id="settings-current-password"
                     type="password"
                     value={pw.current}
-                    onChange={(e) =>
-                      setPw({ ...pw, current: e.target.value })
-                    }
+                    onChange={(e) => setPw({ ...pw, current: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="settings-new-password">
                     新しいパスワード
                   </label>
                   <Input
+                    id="settings-new-password"
                     type="password"
                     value={pw.next}
                     onChange={(e) => setPw({ ...pw, next: e.target.value })}
@@ -114,12 +112,22 @@ export default function Settings() {
                 <div className="flex gap-2">
                   <Button
                     onClick={async () => {
-                      await fetch('/api/account/password', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(pw),
-                      });
-                      alert('パスワードを更新しました');
+                      try {
+                        const res = await fetch('/api/account/password', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(pw),
+                        });
+                        if (redirectIfUnauthorized(res)) return;
+                        if (!res.ok) {
+                          alert(await apiErrorMessage(res, 'パスワードの更新に失敗しました。'));
+                          return;
+                        }
+                        setPw({ current: '', next: '' });
+                        alert('パスワードを更新しました。他の端末ではサインアウトされます。');
+                      } catch {
+                        alert('通信に失敗しました。時間をおいてお試しください。');
+                      }
                     }}
                   >
                     変更
@@ -127,7 +135,12 @@ export default function Settings() {
                   <Button
                     variant="outline"
                     onClick={async () => {
-                      await fetch('/api/auth/logout', { method: 'POST' });
+                      if (!confirm('すべての端末からサインアウトします。よろしいですか？')) return;
+                      const res = await fetch('/api/auth/logout-all', { method: 'POST' }).catch(() => null);
+                      if (!res || (!res.ok && res.status !== 401)) {
+                        alert('サインアウトに失敗しました。時間をおいてお試しください。');
+                        return;
+                      }
                       location.href = '/login';
                     }}
                   >
@@ -137,28 +150,28 @@ export default function Settings() {
               </div>
 
               {/* メールアドレス変更 */}
-              <div className="grid gap-3 border-t border-[var(--border)] pt-4">
+              <div className="grid gap-3 border-t border-(--border) pt-4">
                 <h3 className="font-semibold text-lg">メールアドレス変更</h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="settings-new-email">
                     新しいメールアドレス
                   </label>
                   <Input
+                    id="settings-new-email"
                     type="email"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="settings-email-current-password">
                     現在のパスワード（確認）
                   </label>
                   <Input
+                    id="settings-email-current-password"
                     type="password"
                     value={pw.current}
-                    onChange={(e) =>
-                      setPw({ ...pw, current: e.target.value })
-                    }
+                    onChange={(e) => setPw({ ...pw, current: e.target.value })}
                   />
                 </div>
                 <div>
@@ -174,16 +187,21 @@ export default function Settings() {
                             currentPassword: pw.current,
                           }),
                         });
-                        if (!res.ok) throw new Error(await res.text());
+                        if (!res.ok) {
+                          setEmailReqState('error');
+                          alert(
+                            await apiErrorMessage(
+                              res,
+                              '送信に失敗しました。メールアドレスの重複やパスワードをご確認ください。',
+                            ),
+                          );
+                          return;
+                        }
                         setEmailReqState('sent');
-                        alert(
-                          '確認メールを送信しました。新しいメールアドレスの受信箱をご確認ください。',
-                        );
-                      } catch (e) {
+                        alert('確認メールを送信しました。新しいメールアドレスの受信箱をご確認ください。');
+                      } catch {
                         setEmailReqState('error');
-                        alert(
-                          '送信に失敗しました。メールアドレスの重複やパスワードをご確認ください。',
-                        );
+                        alert('通信に失敗しました。時間をおいてお試しください。');
                       } finally {
                         setEmailReqState('idle');
                       }
@@ -196,25 +214,25 @@ export default function Settings() {
               </div>
 
               {/* アカウント削除 */}
-              <div className="grid gap-3 border-t border-[var(--border)] pt-4">
-                <h3 className="font-semibold text-lg text-red-600">
-                  アカウント削除
-                </h3>
+              <div className="grid gap-3 border-t border-(--border) pt-4">
+                <h3 className="font-semibold text-lg text-red-600">アカウント削除</h3>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="settings-delete-email">
                     メールアドレス
                   </label>
                   <Input
+                    id="settings-delete-email"
                     type="email"
                     value={deleteEmail}
                     onChange={(e) => setDeleteEmail(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="settings-delete-password">
                     パスワード
                   </label>
                   <Input
+                    id="settings-delete-password"
                     type="password"
                     value={deletePassword}
                     onChange={(e) => setDeletePassword(e.target.value)}
@@ -224,16 +242,9 @@ export default function Settings() {
                   <Button
                     variant="outline"
                     className="border-red-300 text-red-600 hover:bg-red-50"
-                    disabled={
-                      deleteLoading || !deleteEmail || !deletePassword
-                    }
+                    disabled={deleteLoading || !deleteEmail || !deletePassword}
                     onClick={async () => {
-                      if (
-                        !confirm(
-                          'アカウントを削除します。よろしいですか？（この操作は取り消せません）',
-                        )
-                      )
-                        return;
+                      if (!confirm('アカウントを削除します。よろしいですか？（この操作は取り消せません）')) return;
                       try {
                         setDeleteLoading(true);
                         const res = await fetch('/api/account/delete', {
@@ -246,15 +257,12 @@ export default function Settings() {
                         });
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok || !data?.ok) {
-                          alert(
-                            data?.error ||
-                              '削除に失敗しました。メールアドレスまたはパスワードをご確認ください。',
-                          );
+                          alert(data?.error || '削除に失敗しました。メールアドレスまたはパスワードをご確認ください。');
                           return;
                         }
                         alert('アカウントを削除しました。ご利用ありがとうございました。');
                         location.href = '/login?deleted=1';
-                      } catch (e) {
+                      } catch {
                         alert('削除に失敗しました。時間をおいてお試しください。');
                       } finally {
                         setDeleteLoading(false);
@@ -277,33 +285,44 @@ export default function Settings() {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                await fetch('/api/settings/profile', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(profile),
-                });
-                alert('保存しました');
+                try {
+                  const res = await fetch('/api/settings/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(profile),
+                  });
+                  if (redirectIfUnauthorized(res)) return;
+                  if (!res.ok) {
+                    alert(await apiErrorMessage(res, '保存に失敗しました。'));
+                    return;
+                  }
+                  alert('保存しました');
+                } catch {
+                  alert('通信に失敗しました。時間をおいてお試しください。');
+                }
               }}
               className="grid gap-3 max-w-3xl"
             >
               {/* 氏名 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">姓</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-last-name">
+                    姓
+                  </label>
                   <Input
+                    id="profile-last-name"
                     value={profile.lastName || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, lastName: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">名</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-first-name">
+                    名
+                  </label>
                   <Input
+                    id="profile-first-name"
                     value={profile.firstName || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, firstName: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
                   />
                 </div>
               </div>
@@ -311,25 +330,23 @@ export default function Settings() {
               {/* フリガナ */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="profile-last-name-kana">
                     セイ（カナ）
                   </label>
                   <Input
+                    id="profile-last-name-kana"
                     value={profile.lastNameKana || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, lastNameKana: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, lastNameKana: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="profile-first-name-kana">
                     メイ（カナ）
                   </label>
                   <Input
+                    id="profile-first-name-kana"
                     value={profile.firstNameKana || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, firstNameKana: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, firstNameKana: e.target.value })}
                   />
                 </div>
               </div>
@@ -337,23 +354,25 @@ export default function Settings() {
               {/* 生年月日・性別 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">生年月日</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-birth-date">
+                    生年月日
+                  </label>
                   <Input
+                    id="profile-birth-date"
                     type="date"
                     value={profile.birthDate || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, birthDate: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">性別</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-gender">
+                    性別
+                  </label>
                   <select
+                    id="profile-gender"
                     value={profile.gender || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, gender: e.target.value })
-                    }
-                    className="w-full rounded-md border border-[var(--border)] bg-white dark:bg-[var(--card)] px-3 py-2"
+                    onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
+                    className="w-full rounded-md border border-(--border) bg-white dark:bg-(--card) px-3 py-2"
                   >
                     <option value="">未選択</option>
                     <option value="male">男性</option>
@@ -366,119 +385,117 @@ export default function Settings() {
               {/* 連絡先・住所 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">電話番号</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-phone">
+                    電話番号
+                  </label>
                   <Input
+                    id="profile-phone"
                     value={profile.phone || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, phone: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="profile-postal-code">
                     郵便番号
                   </label>
                   <Input
+                    id="profile-postal-code"
                     placeholder="1000001"
                     value={profile.postalCode || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, postalCode: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, postalCode: e.target.value })}
                   />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="profile-prefecture">
                     都道府県
                   </label>
                   <Input
+                    id="profile-prefecture"
                     value={profile.prefecture || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, prefecture: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, prefecture: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="profile-city">
                     市区町村
                   </label>
                   <Input
+                    id="profile-city"
                     value={profile.city || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, city: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, city: e.target.value })}
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm text-[var(--muted)]">番地</label>
+                <label className="text-sm text-(--muted)" htmlFor="profile-address1">
+                  番地
+                </label>
                 <Input
+                  id="profile-address1"
                   value={profile.address1 || ''}
-                  onChange={(e) =>
-                    setProfile({ ...profile, address1: e.target.value })
-                  }
+                  onChange={(e) => setProfile({ ...profile, address1: e.target.value })}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-[var(--muted)]">建物名等</label>
+                <label className="text-sm text-(--muted)" htmlFor="profile-address2">
+                  建物名等
+                </label>
                 <Input
+                  id="profile-address2"
                   value={profile.address2 || ''}
-                  onChange={(e) =>
-                    setProfile({ ...profile, address2: e.target.value })
-                  }
+                  onChange={(e) => setProfile({ ...profile, address2: e.target.value })}
                 />
               </div>
 
               {/* 事業情報 */}
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="profile-business-name">
                     屋号（事業所名）
                   </label>
                   <Input
+                    id="profile-business-name"
                     value={profile.businessName || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, businessName: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, businessName: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">開業日</label>
+                  <label className="text-sm text-(--muted)" htmlFor="profile-start-date">
+                    開業日
+                  </label>
                   <Input
+                    id="profile-start-date"
                     type="date"
                     value={profile.startDate || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, startDate: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, startDate: e.target.value })}
                   />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="profile-occupation">
                     業種／職種
                   </label>
                   <Input
+                    id="profile-occupation"
                     value={profile.occupation || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, occupation: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, occupation: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-[var(--muted)]">
+                  <label className="text-sm text-(--muted)" htmlFor="profile-invoice-no">
                     登録番号（インボイス）
                   </label>
                   <Input
+                    id="profile-invoice-no"
                     placeholder="T1234567890123"
                     value={profile.invoiceNo || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, invoiceNo: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, invoiceNo: e.target.value })}
                   />
                 </div>
               </div>
