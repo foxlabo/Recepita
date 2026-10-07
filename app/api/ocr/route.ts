@@ -9,6 +9,8 @@ import { enforce, RATE_LIMITS } from '@/lib/rate-limit';
 import { inferExpenseCategory } from '@/lib/ai/expenseCategory';
 import { formatItemsText, itemsFromJson } from '@/lib/items';
 import { parseRetryAfter } from '@/lib/retry-after';
+import { normalizeDetectedForTotals } from '@/lib/ocr/normalize';
+import { type DetectedType, sniffType } from '@/lib/ocr/sniff';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,8 +27,6 @@ const MSG_NOT_CONFIGURED = 'OCR機能が設定されていません。';
 
 // ---------------------------------------------------------------- upload
 
-type DetectedType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heif' | 'application/pdf';
-
 /** Declared types we accept (browsers may also send '' or octet-stream for HEIC). */
 const ALLOWED_DECLARED = new Set([
   'image/jpeg',
@@ -40,23 +40,6 @@ const ALLOWED_DECLARED = new Set([
   '',
   'application/octet-stream',
 ]);
-
-const HEIF_BRANDS = new Set(['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1', 'heif']);
-
-/** Identify the file by its magic bytes; the declared type is not trusted. */
-function sniffType(buf: Buffer): DetectedType | null {
-  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
-  if (buf.length >= 8 && buf.readUInt32BE(0) === 0x89504e47 && buf.readUInt32BE(4) === 0x0d0a1a0a) return 'image/png';
-  if (buf.length >= 12 && buf.toString('latin1', 0, 4) === 'RIFF' && buf.toString('latin1', 8, 12) === 'WEBP') {
-    return 'image/webp';
-  }
-  if (buf.length >= 12 && buf.toString('latin1', 4, 8) === 'ftyp' && HEIF_BRANDS.has(buf.toString('latin1', 8, 12))) {
-    return 'image/heif';
-  }
-  // PDF header must appear within the first 1024 bytes.
-  if (buf.subarray(0, 1024).includes('%PDF-', 0, 'latin1')) return 'application/pdf';
-  return null;
-}
 
 /** Read the request body, aborting as soon as it exceeds `limit` bytes. */
 async function readBodyWithLimit(req: Request, limit: number): Promise<Buffer> {
@@ -103,58 +86,6 @@ async function readUpload(req: Request, contentType: string) {
   // 'auto' は従来どおりレシートモデル扱い
   const logicalModel: LogicalModel = form.get('model') === 'invoice' ? 'invoice' : 'receipt';
   return { buffer, mime, logicalModel };
-}
-
-// ---------------------------------------------------------------- result
-
-// ★ 金額系フィールドを「税込」寄りに正規化するヘルパー
-function normalizeDetectedForTotals(raw: any): any {
-  const detected: any = { ...(raw || {}) };
-
-  const toNum = (v: any): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
-
-  // Azure Invoice の別名っぽいフィールドも一応拾っておく
-  let subtotal = toNum(detected.subtotal ?? detected.subTotal);
-  let tax = toNum(detected.tax ?? detected.totalTax);
-  // amountDue / invoiceTotal あたりも total 候補にする
-  let total = toNum(detected.total ?? detected.amountDue ?? detected.invoiceTotal ?? detected.amount);
-  const amount = toNum(detected.amount);
-
-  // subtotal が無ければ amount を小計扱いに
-  if (subtotal == null && amount != null) {
-    subtotal = amount;
-  }
-
-  // tax が無くて total と subtotal が両方あれば差分から推定
-  if (tax == null && total != null && subtotal != null && total > subtotal) {
-    tax = total - subtotal;
-  }
-
-  // total が無ければ subtotal + tax を優先
-  if (total == null && subtotal != null && tax != null) {
-    total = subtotal + tax;
-  }
-
-  // それでも無い場合は amount を total 扱い
-  if (total == null && amount != null) {
-    total = amount;
-  }
-
-  // subtotal が無くて total だけあれば、とりあえず subtotal = total
-  if (subtotal == null && total != null) {
-    subtotal = total;
-  }
-
-  // tax が未定義なら 0 に寄せる（税別しか来ないケースに備えて）
-  if (tax == null) {
-    tax = 0;
-  }
-
-  detected.subtotal = subtotal ?? detected.subtotal;
-  detected.tax = tax;
-  detected.total = total ?? detected.total ?? detected.subtotal ?? detected.amount;
-
-  return detected;
 }
 
 // ---------------------------------------------------------------- provider
