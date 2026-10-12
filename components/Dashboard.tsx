@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { axisTicks, type MomTone, monthOverMonth, niceAxis } from '@/lib/dashboard';
 import { yearMonthJST } from '@/lib/dates';
 
 type Summary = {
@@ -28,90 +29,156 @@ type ApiRes = {
 function fmtYen(n: number) {
   return `¥${(n || 0).toLocaleString()}`;
 }
-/** 前月比（%）。前月が 0 のときは比率を定義できないので null。 */
-function diffPct(cur: number, prev: number): number | null {
-  if (prev === 0) return null;
-  return Math.round(((cur - prev) / Math.abs(prev)) * 100);
-}
-const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+
+/** 前月比の色（緑=良い / 赤=悪い）。どちらのテーマでも WCAG AA（4.5:1 以上）。 */
+const TONE_CLASS: Record<MomTone, string> = {
+  good: 'text-green-700 dark:text-green-400',
+  bad: 'text-red-700 dark:text-red-400',
+  neutral: 'text-(--muted)',
+};
+const TONE_SR: Record<MomTone, string> = { good: '（改善）', bad: '（悪化）', neutral: '' };
 
 /* ===== 折れ線グラフ ===== */
-function LineChart({ months, a, b, height = 200 }: { months: string[]; a: number[]; b: number[]; height?: number }) {
-  const n = Math.max(0, Math.min(months.length, a.length, b.length));
-  const M = months.slice(0, n);
-  const A = a.slice(0, n).map((v) => Number(v ?? 0));
-  const B = b.slice(0, n).map((v) => Number(v ?? 0));
+/** 系列の色（ライト/ダークで濃さを変え、どちらの背景でも 3:1 以上）。凡例と共通。 */
+const SERIES = [
+  { key: 'sales', label: '売上', line: 'stroke-sky-600 dark:stroke-sky-400', dot: 'fill-sky-600 dark:fill-sky-400' },
+  { key: 'expenses', label: '経費', line: 'stroke-red-600 dark:stroke-red-400', dot: 'fill-red-600 dark:fill-red-400' },
+] as const;
+const SWATCH: Record<(typeof SERIES)[number]['key'], string> = {
+  sales: 'bg-sky-600 dark:bg-sky-400',
+  expenses: 'bg-red-600 dark:bg-red-400',
+};
 
-  // --- y軸を 1/2/5 × 10^k の“きれいな値”に丸める
-  const rawMax = Math.max(1, ...A, ...B);
-  const pow10 = 10 ** Math.max(0, Math.floor(Math.log10(rawMax)));
-  const mant = rawMax / pow10;
-  const niceMant = mant <= 1 ? 1 : mant <= 2 ? 2 : mant <= 5 ? 5 : 10;
-  const maxY = niceMant * pow10;
+/** Width of the element in CSS px (0 until measured), kept up to date with a ResizeObserver. */
+function useElementWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+  // layout effect: measured before the first paint, so the chart does not pop in
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    setWidth(Math.floor(el.getBoundingClientRect().width));
+    const ro = new ResizeObserver(([entry]) => setWidth(Math.floor(entry.contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
 
-  const pad = 32;
-  const width = 720;
-  const heightPx = height;
-  const plotW = width - pad * 2;
-  const plotH = heightPx - pad * 2;
-  const xStep = n > 1 ? plotW / (n - 1) : 0;
+const FONT_PX = 12; // axis labels, rendered 1:1 (the SVG is drawn at the measured width, not scaled)
+const DIGIT_PX = 7.2; // rough width of a digit / comma at 12px, for the left padding
 
-  const toXY = (v: number, i: number) => [pad + i * xStep, pad + plotH - (v / maxY) * plotH] as const;
+/**
+ * 12ヶ月推移。親要素の幅を測ってその幅で描く（viewBox = 実寸）ので、
+ * 文字が縮まず、カードの幅いっぱいに広がる。高さは幅に応じて 200〜300px。
+ */
+function LineChart({ months, sales, expenses }: { months: string[]; sales: number[]; expenses: number[] }) {
+  const [ref, width] = useElementWidth<HTMLDivElement>();
+  const height = Math.round(Math.min(300, Math.max(200, width * 0.42)));
 
-  const path = (arr: number[], color: string) => {
-    const pts = arr.map((v, i) => toXY(v, i));
-    const d = pts.map((p, i) => (i ? `L ${p[0]} ${p[1]}` : `M ${p[0]} ${p[1]}`)).join(' ');
-    return <path d={d} stroke={color} fill="none" strokeWidth={2} />;
-  };
+  const n = Math.min(months.length, sales.length, expenses.length);
+  const clean = (arr: number[]) => arr.slice(0, n).map((v) => Math.max(0, Number(v) || 0));
+  const values = { sales: clean(sales), expenses: clean(expenses) };
+  const dataMax = Math.max(0, ...values.sales, ...values.expenses);
+  const empty = dataMax === 0;
+  const axis = niceAxis(dataMax);
+  const ticks = empty ? [0] : axisTicks(axis);
+
+  const tickLabel = (v: number) => v.toLocaleString('ja-JP');
+  const padL = 12 + Math.max(...ticks.map((t) => tickLabel(t).length)) * DIGIT_PX;
+  const padR = 18; // room for the last month label
+  const padT = 10;
+  const padB = 40; // 月 + 年（1月と先頭のみ）の 2 行
+  const plotW = Math.max(0, width - padL - padR);
+  const plotH = Math.max(0, height - padT - padB);
+  const slot = n > 1 ? plotW / (n - 1) : plotW;
+  const x = (i: number) => padL + (n > 1 ? i * slot : plotW / 2);
+  const y = (v: number) => padT + plotH - (v / axis.max) * plotH;
+  // 狭い画面では月ラベルを間引く（1 ラベルあたり 36px 以上）。最新の月から数えて等間隔に出す
+  const labelEvery = Math.max(1, Math.ceil(36 / Math.max(1, slot)));
+  const firstLabel = (n - 1) % labelEvery;
 
   return (
-    <svg
-      width="100%"
-      height={heightPx}
-      viewBox={`0 0 ${width} ${heightPx}`}
-      preserveAspectRatio="xMidYMid meet"
-      className="block"
-      role="img"
-      aria-label="売上と経費の12ヶ月推移（折れ線グラフ）"
-    >
-      {/* X軸 */}
-      <line x1={pad} y1={pad + plotH} x2={width - pad} y2={pad + plotH} stroke="currentColor" opacity={0.25} />
+    <div ref={ref} className="w-full" style={{ height }}>
+      {width > 0 && (
+        <svg
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          className="block overflow-visible"
+          role="img"
+          aria-label="売上と経費の12ヶ月推移（折れ線グラフ）"
+          fontSize={FONT_PX}
+        >
+          {/* グリッドと y 軸の目盛 */}
+          {ticks.map((t) => (
+            <g key={t}>
+              <line
+                x1={padL}
+                x2={width - padR}
+                y1={y(t)}
+                y2={y(t)}
+                className={t === 0 ? 'stroke-(--muted)' : 'stroke-(--border)'}
+                strokeOpacity={t === 0 ? 0.6 : 1}
+              />
+              <text x={padL - 8} y={y(t)} dy="0.35em" textAnchor="end" className="fill-(--muted) tabular-nums">
+                {tickLabel(t)}
+              </text>
+            </g>
+          ))}
 
-      {/* グリッド & 目盛 0/25/50/75/100% */}
-      {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-        const y = pad + (1 - frac) * plotH;
-        const val = Math.round(maxY * frac).toLocaleString();
-        return (
-          <g key={frac}>
-            <line x1={pad} y1={y} x2={width - pad} y2={y} stroke="currentColor" opacity={0.12} />
-            <text x={4} y={y + 4} fontSize="10" fill="currentColor" opacity="0.7">
-              {val}
+          {/* x 軸の月（年は最初のラベルと年が変わったラベルだけ） */}
+          {months.slice(0, n).map((ym, i) => {
+            if ((i - firstLabel) % labelEvery !== 0 || i < firstLabel) return null;
+            const [yy, mm] = ym.split('-');
+            const showYear = i === firstLabel || months[i - labelEvery]?.slice(0, 4) !== yy;
+            return (
+              <text key={ym} x={x(i)} y={padT + plotH + 18} textAnchor="middle" className="fill-(--muted)">
+                {`${Number(mm)}月`}
+                {showYear && (
+                  <tspan x={x(i)} dy="1.25em">
+                    {yy}
+                  </tspan>
+                )}
+              </text>
+            );
+          })}
+
+          {/* 折れ線と点（点のツールチップは <title>）。全期間 0 なら線は描かずメッセージだけ */}
+          {!empty &&
+            SERIES.map((s) => (
+              <g key={s.key}>
+                <polyline
+                  points={values[s.key].map((v, i) => `${x(i)},${y(v)}`).join(' ')}
+                  fill="none"
+                  strokeWidth={2.5}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  className={s.line}
+                />
+                {values[s.key].map((v, i) => (
+                  <circle
+                    key={months[i]}
+                    cx={x(i)}
+                    cy={y(v)}
+                    r={3.5}
+                    strokeWidth={1.5}
+                    className={`${s.dot} stroke-(--card)`}
+                  >
+                    <title>{`${months[i]} ${s.label} ${fmtYen(v)}`}</title>
+                  </circle>
+                ))}
+              </g>
+            ))}
+
+          {empty && (
+            <text x={padL + plotW / 2} y={padT + plotH / 2} textAnchor="middle" className="fill-(--muted)">
+              この期間の売上・経費はありません
             </text>
-          </g>
-        );
-      })}
-
-      {/* X軸ラベル（月） */}
-      {M.map((m, i) => {
-        const x = pad + i * xStep;
-        return (
-          <text key={m} x={x} y={heightPx - 6} fontSize="10" fill="currentColor" opacity="0.7" textAnchor="middle">
-            {m.slice(2)}
-          </text>
-        );
-      })}
-
-      {/* ライン */}
-      {path(A, '#0ea5e9')}
-      {path(B, '#ef4444')}
-
-      {/* データ無し */}
-      {!n && (
-        <text x={width / 2} y={heightPx / 2} fontSize="12" fill="currentColor" opacity="0.5" textAnchor="middle">
-          データがありません
-        </text>
+          )}
+        </svg>
       )}
-    </svg>
+    </div>
   );
 }
 /* ===== 円グラフ ===== */
@@ -158,7 +225,7 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
   });
 
   return (
-    <div className="flex items-center gap-4 justify-center w-full">
+    <div className="flex w-full flex-wrap items-center justify-center gap-6">
       <svg
         width={size}
         height={size}
@@ -169,20 +236,23 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
       >
         {arcs}
       </svg>
-      <div className="space-y-1">
+      {/* 凡例: 名前は可変幅（長い名前は省略して title で全文）、金額は右揃えの等幅数字。
+          カードが狭いときは円グラフの下に回り込む */}
+      <ul className="min-w-52 max-w-64 flex-1 space-y-1.5 text-sm">
         {real.slice(0, 8).map((r, i) => (
-          <div key={r.name} className="text-sm flex items-center gap-2">
+          <li key={r.name} className="flex items-center gap-2">
             <span
-              className="w-3 h-3 inline-block rounded-sm"
+              aria-hidden="true"
+              className="size-3 shrink-0 rounded-sm"
               style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
             />
-            <span className="w-28 truncate text-(--muted)" title={r.name}>
+            <span className="min-w-0 flex-1 truncate text-(--muted)" title={r.name}>
               {r.name}
             </span>
-            <span className="font-medium">{fmtYen(r.amount)}</span>
-          </div>
+            <span className="shrink-0 pl-2 text-right font-medium tabular-nums">{fmtYen(r.amount)}</span>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -229,9 +299,18 @@ export default function Dashboard() {
   }, [year, month]);
 
   const summary = data?.summary;
-  const pctSales = summary ? diffPct(summary.sales, summary.prev.sales) : null;
-  const pctExpense = summary ? diffPct(summary.expense, summary.prev.expense) : null;
-  const pctProfit = summary ? diffPct(summary.profit, summary.prev.profit) : null;
+  // 売上・利益は増加が良い、経費は減少が良い（読込前は前月 0 扱いで「—」）
+  const cards = (
+    [
+      { key: 'sales', label: '今月の売上', higherIsBetter: true },
+      { key: 'expense', label: '今月の経費', higherIsBetter: false },
+      { key: 'profit', label: '今月の利益', higherIsBetter: true },
+    ] as const
+  ).map((c) => ({
+    ...c,
+    value: summary?.[c.key] ?? 0,
+    mom: monthOverMonth(summary?.[c.key] ?? 0, summary?.prev[c.key] ?? 0, c.higherIsBetter),
+  }));
 
   return (
     <div className="space-y-4">
@@ -269,35 +348,32 @@ export default function Dashboard() {
         </div>
       </div>
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+          {error}
+        </div>
       )}
 
       {/* サマリーカード */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {[
-          { key: 'sales', label: '今月の売上', value: summary?.sales ?? 0, pct: pctSales },
-          { key: 'expense', label: '今月の経費', value: summary?.expense ?? 0, pct: pctExpense },
-          { key: 'profit', label: '今月の利益', value: summary?.profit ?? 0, pct: pctProfit },
-        ].map((c) => (
+        {cards.map((c) => (
           <Card key={c.key}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="text-sm font-semibold text-(--muted) leading-none min-h-[18px]">{c.label}</div>
               </div>
-              <div className="mt-2 text-2xl md:text-3xl font-bold tracking-tight leading-none min-h-[36px]">
+              <div className="mt-2 text-2xl md:text-3xl font-bold tracking-tight leading-none min-h-[36px] tabular-nums">
                 {fmtYen(c.value)}
               </div>
               <div className="mt-2 text-xs font-medium">
                 <span className="text-(--muted) font-normal">前月比</span>{' '}
-                {c.pct === null ? (
-                  <span className="text-(--muted)" title="前月のデータがありません">
-                    —
-                  </span>
-                ) : (
-                  <span
-                    className={c.pct >= 0 ? 'text-green-700 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}
-                  >{`${sign(c.pct)}%`}</span>
-                )}
+                <span
+                  className={`tabular-nums ${TONE_CLASS[c.mom.tone]}`}
+                  data-tone={c.mom.tone}
+                  title={c.mom.pct === null ? '前月のデータがありません' : undefined}
+                >
+                  {c.mom.label}
+                  {TONE_SR[c.mom.tone] && <span className="sr-only">{TONE_SR[c.mom.tone]}</span>}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -308,23 +384,23 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="space-y-4">
           <Card>
-            <CardHeader>12ヶ月推移（売上/経費）</CardHeader>
+            <CardHeader className="p-4 border-b border-(--border) flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+              <div>12ヶ月推移（売上/経費）</div>
+              <div className="flex items-center gap-4 text-xs text-(--muted)">
+                {SERIES.map((s) => (
+                  <span key={s.key} className="inline-flex items-center gap-1.5">
+                    <span aria-hidden="true" className={`h-1 w-4 rounded-full ${SWATCH[s.key]}`} />
+                    {s.label}
+                  </span>
+                ))}
+              </div>
+            </CardHeader>
             <CardContent>
               {data?.trend?.months?.length ? (
-                <div className="w-full flex justify-center">
-                  <LineChart months={data.trend.months} a={data.trend.sales} b={data.trend.expenses} />
-                </div>
+                <LineChart months={data.trend.months} sales={data.trend.sales} expenses={data.trend.expenses} />
               ) : (
                 <div className="text-sm text-(--muted)">{data ? 'データがありません' : '読込中…'}</div>
               )}
-              <div className="mt-2 flex items-center gap-4 text-xs text-(--muted)">
-                <span className="inline-flex items-center gap-1">
-                  <span className="w-3 h-3 inline-block rounded-sm" style={{ background: '#0ea5e9' }}></span>売上
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <span className="w-3 h-3 inline-block rounded-sm" style={{ background: '#ef4444' }}></span>経費
-                </span>
-              </div>
             </CardContent>
           </Card>
 
@@ -347,18 +423,18 @@ export default function Dashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-(--muted)">
-                    <th className="text-left">日付</th>
-                    <th className="text-left">取引先</th>
-                    <th className="text-right">金額</th>
+                    <th className="pb-1 text-left font-medium">日付</th>
+                    <th className="pb-1 text-left font-medium">取引先</th>
+                    <th className="pb-1 text-right font-medium">金額</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data?.recent?.expenses?.length ? (
                     data.recent.expenses.map((e) => (
                       <tr key={e.id}>
-                        <td>{e.date}</td>
-                        <td>{e.vendor}</td>
-                        <td className="text-right">{fmtYen(e.amount)}</td>
+                        <td className="py-0.5 pr-3 whitespace-nowrap tabular-nums">{e.date}</td>
+                        <td className="py-0.5 pr-3">{e.vendor}</td>
+                        <td className="py-0.5 text-right whitespace-nowrap tabular-nums">{fmtYen(e.amount)}</td>
                       </tr>
                     ))
                   ) : (
@@ -377,18 +453,18 @@ export default function Dashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-(--muted)">
-                    <th className="text-left">日付</th>
-                    <th className="text-left">取引先</th>
-                    <th className="text-right">金額</th>
+                    <th className="pb-1 text-left font-medium">日付</th>
+                    <th className="pb-1 text-left font-medium">取引先</th>
+                    <th className="pb-1 text-right font-medium">金額</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data?.recent?.invoices?.length ? (
                     data.recent.invoices.map((i) => (
                       <tr key={i.id}>
-                        <td>{i.date}</td>
-                        <td>{i.client}</td>
-                        <td className="text-right">{fmtYen(i.amount)}</td>
+                        <td className="py-0.5 pr-3 whitespace-nowrap tabular-nums">{i.date}</td>
+                        <td className="py-0.5 pr-3">{i.client}</td>
+                        <td className="py-0.5 text-right whitespace-nowrap tabular-nums">{fmtYen(i.amount)}</td>
                       </tr>
                     ))
                   ) : (

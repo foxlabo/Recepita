@@ -16,10 +16,10 @@ const FAIL_REASON: Record<string, string> = {
 function Banner({ tone, children }: { tone: 'ok' | 'warn' | 'error'; children: React.ReactNode }) {
   const cls =
     tone === 'ok'
-      ? 'bg-green-50 text-green-800'
+      ? 'bg-green-50 text-green-800 dark:bg-green-950/40 dark:text-green-300'
       : tone === 'warn'
-        ? 'bg-yellow-50 text-yellow-800'
-        : 'bg-red-50 text-red-800';
+        ? 'bg-yellow-50 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300'
+        : 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300';
   return <div className={`mt-4 mb-2 p-3 rounded-sm text-sm ${cls}`}>{children}</div>;
 }
 

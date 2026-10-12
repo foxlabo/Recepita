@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
-import { insertExpense, insertSale, resetUserData } from './db';
+import { insertDraft, insertExpense, insertSale, resetUserData } from './db';
 import { loginViaApi, previousMonthJst, todayJst } from './helpers';
 import { UNKNOWN_EMAIL, USERS } from './users';
 
@@ -47,6 +47,33 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/dashboard');
       await expect(page.locator('.shadow-card').filter({ hasText: '今月の売上' })).toContainText('¥8,000');
       await expect(page.getByText('読込中…')).toHaveCount(0);
+      await expect(page.getByRole('img', { name: '売上と経費の12ヶ月推移（折れ線グラフ）' })).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+
+    // red 削除 buttons / headings, the styled file inputs and the tables
+    test('経費登録, 売上登録 and 設定 have no serious or critical WCAG 2 A/AA violations', async ({ page }) => {
+      await resetUserData(USERS.a11y);
+      await insertDraft(USERS.a11y, { ymd: todayJst(), amount: 1540, vendor: 'A11y下書き', category: '会議費' });
+      await insertSale(USERS.a11y, { ymd: todayJst(), amount: 8000, client: 'A11y案件' });
+      await loginViaApi(page, USERS.a11y);
+
+      await page.goto('/expenses');
+      await expect(page.getByRole('row', { name: /A11y下書き/ }).getByRole('button', { name: '削除' })).toBeVisible();
+      await expect(page.getByLabel('レシート（画像/PDF）')).toHaveAttribute('type', 'file');
+      expect(await seriousViolations(page)).toEqual([]);
+
+      await page.getByRole('button', { name: '一括登録' }).click();
+      await expect(page.getByLabel('解析するファイル（画像/PDF、複数可）')).toHaveAttribute('type', 'file');
+      expect(await seriousViolations(page)).toEqual([]);
+
+      await page.goto('/invoices');
+      await expect(page.getByRole('row', { name: /A11y案件/ }).getByRole('button', { name: '削除' })).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+
+      await page.goto('/settings');
+      await expect(page.getByRole('heading', { name: 'アカウント削除' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'アカウントを削除する' })).toBeVisible();
       expect(await seriousViolations(page)).toEqual([]);
     });
   });

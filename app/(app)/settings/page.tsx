@@ -215,7 +215,7 @@ export default function Settings() {
 
               {/* アカウント削除 */}
               <div className="grid gap-3 border-t border-(--border) pt-4">
-                <h3 className="font-semibold text-lg text-red-600">アカウント削除</h3>
+                <h3 className="font-semibold text-lg text-red-700 dark:text-red-400">アカウント削除</h3>
                 <div className="space-y-1">
                   <label className="text-sm text-(--muted)" htmlFor="settings-delete-email">
                     メールアドレス
@@ -240,8 +240,7 @@ export default function Settings() {
                 </div>
                 <div>
                   <Button
-                    variant="outline"
-                    className="border-red-300 text-red-600 hover:bg-red-50"
+                    variant="danger"
                     disabled={deleteLoading || !deleteEmail || !deletePassword}
                     onClick={async () => {
                       if (!confirm('アカウントを削除します。よろしいですか？（この操作は取り消せません）')) return;

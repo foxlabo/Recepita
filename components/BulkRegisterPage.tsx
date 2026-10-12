@@ -3,6 +3,7 @@ import type React from 'react';
 import { useMemo, useRef, useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import FileInput from '@/components/ui/FileInput';
 import { callOcr, type OcrModel } from '@/lib/ocr/client';
 import { pagesToDraftRows, toOcrPage, type OcrPage } from '@/lib/ocr/extract';
 import { expandPdfPages } from '@/lib/pdf-split';
@@ -145,7 +146,10 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
         <div className="border-2 border-dashed border-(--border) rounded-xl p-8 text-center text-sm text-(--muted)">
           ここにファイルをドラッグ&ドロップ（複数可）／PDFも可（複数ページPDFは自動でページ分割）
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <input ref={inputRef} type="file" multiple onChange={onPick} />
+            <label className="sr-only" htmlFor="bulk-files">
+              解析するファイル（画像/PDF、複数可）
+            </label>
+            <FileInput id="bulk-files" ref={inputRef} multiple onChange={onPick} />
 
             <div className="flex items-center gap-2">
               <span aria-hidden="true">形式</span>
@@ -182,7 +186,10 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
             >
               解析
             </Button>
-            <span className="text-(--muted)">状態: {statusText}</span>
+            {/* live region は常に置き、処理中だけ中身を出す（空の「状態:」は出さない） */}
+            <span role="status" className="text-(--muted)">
+              {statusText}
+            </span>
           </div>
         </div>
 

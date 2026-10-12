@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import BulkRegisterPage from '@/components/BulkRegisterPage';
 import DraftsCard, { type DraftRow } from '@/components/DraftsCard';
 import Button from '@/components/ui/Button';
+import FileInput from '@/components/ui/FileInput';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { apiErrorMessage, redirectIfUnauthorized } from '@/lib/api-client';
@@ -177,12 +178,14 @@ function SingleRegisterTab({ onAppend }: { onAppend: (row: DraftPayload) => Prom
 
           {/* ボタン列 */}
           <div className="md:col-span-full flex flex-wrap items-center gap-2">
-            <input
+            <label className="text-sm text-(--muted)" htmlFor="new-receipt-file">
+              レシート（画像/PDF）
+            </label>
+            <FileInput
+              id="new-receipt-file"
               ref={fileInputRef}
-              type="file"
               accept="image/*,.pdf"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              className="block"
             />
             <Button
               type="button"
@@ -192,7 +195,10 @@ function SingleRegisterTab({ onAppend }: { onAppend: (row: DraftPayload) => Prom
             >
               解析
             </Button>
-            <span className="text-(--muted) ml-2">状態: {statusText}</span>
+            {/* live region は常に置き、処理中だけ中身を出す（空の「状態:」は出さない） */}
+            <span role="status" className="ml-2 text-sm text-(--muted)">
+              {statusText}
+            </span>
             <div className="ml-auto">
               <Button type="submit" disabled={busy !== 'idle'}>
                 追加

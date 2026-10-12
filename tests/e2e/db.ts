@@ -77,6 +77,29 @@ export async function insertExpense(
   });
 }
 
+/** Insert an expense draft (下書き) with the trade date `ymd`. */
+export async function insertDraft(
+  email: string,
+  d: { ymd: string; amount: number; vendor: string; category?: string; itemsSummary?: string; memo?: string },
+) {
+  await withDb(async (db) => {
+    await db.query(
+      `INSERT INTO "DraftExpense" (id, "userId", "tradeDate", amount, vendor, category, "itemsSummary", memo)
+       VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8)`,
+      [
+        `e2e_${randomUUID()}`,
+        await userId(db, email),
+        d.ymd,
+        d.amount,
+        d.vendor,
+        d.category ?? null,
+        d.itemsSummary ?? null,
+        d.memo ?? null,
+      ],
+    );
+  });
+}
+
 /** Insert a sale (Invoice) issued on the calendar day `ymd`. */
 export async function insertSale(email: string, s: { ymd: string; amount: number; client: string }) {
   await withDb(async (db) => {

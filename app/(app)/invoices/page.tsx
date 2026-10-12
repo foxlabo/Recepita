@@ -132,7 +132,7 @@ export default function Invoices() {
               />
             </div>
             {error && (
-              <div role="alert" className="md:col-span-3 text-sm text-red-600">
+              <div role="alert" className="md:col-span-3 text-sm text-red-700 dark:text-red-400">
                 {error}
               </div>
             )}
@@ -153,7 +153,7 @@ export default function Invoices() {
               <thead>
                 <tr className="bg-gray-50 dark:bg-[#101a16]">
                   <th className="text-left p-2 border-b border-(--border)">売上名</th>
-                  <th className="text-left p-2 border-b border-(--border)">金額</th>
+                  <th className="text-right p-2 pr-6 border-b border-(--border)">金額</th>
                   <th className="text-left p-2 border-b border-(--border)">発行日</th>
                   <th className="p-2 border-b border-(--border) w-28 text-right">操作</th>
                 </tr>
@@ -162,15 +162,10 @@ export default function Invoices() {
                 {list.map((x) => (
                   <tr key={x.id} className="hover:bg-gray-50/70 dark:hover:bg-[#101a16]">
                     <td className="p-2">{x.client}</td>
-                    <td className="p-2">¥{x.amount.toLocaleString()}</td>
-                    <td className="p-2">{formatDateJST(x.issueDate).replace(/-/g, '/')}</td>
+                    <td className="p-2 pr-6 text-right whitespace-nowrap tabular-nums">¥{x.amount.toLocaleString()}</td>
+                    <td className="p-2 tabular-nums">{formatDateJST(x.issueDate).replace(/-/g, '/')}</td>
                     <td className="p-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
-                        onClick={() => removeOne(x.id)}
-                      >
+                      <Button size="sm" variant="danger" onClick={() => removeOne(x.id)}>
                         削除
                       </Button>
                     </td>

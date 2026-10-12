@@ -16,6 +16,7 @@ test('register an expense draft manually, finalize it, see it in 経費一覧 an
   await page.goto('/expenses');
   await expect(page.getByRole('heading', { name: '経費' })).toBeVisible();
   await expect(page.getByText('下書きなし')).toBeVisible();
+  await expect(page.getByRole('status')).toBeEmpty(); // no empty 「状態:」 while idle
 
   await expect(page.getByLabel('取引日')).toHaveValue(today);
   await page.getByLabel('金額').fill('1,200');
