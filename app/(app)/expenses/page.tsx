@@ -195,7 +195,10 @@ function SingleRegisterTab({ onAppend }: { onAppend: (row: DraftPayload) => Prom
             >
               解析
             </Button>
-            <span className="text-(--muted) ml-2">状態: {statusText}</span>
+            {/* live region は常に置き、処理中だけ中身を出す（空の「状態:」は出さない） */}
+            <span role="status" className="ml-2 text-sm text-(--muted)">
+              {statusText}
+            </span>
             <div className="ml-auto">
               <Button type="submit" disabled={busy !== 'idle'}>
                 追加

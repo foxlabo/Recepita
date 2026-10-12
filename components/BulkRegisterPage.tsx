@@ -186,7 +186,10 @@ export default function BulkRegisterPage({ onAppendDrafts }: BulkProps) {
             >
               解析
             </Button>
-            <span className="text-(--muted)">状態: {statusText}</span>
+            {/* live region は常に置き、処理中だけ中身を出す（空の「状態:」は出さない） */}
+            <span role="status" className="text-(--muted)">
+              {statusText}
+            </span>
           </div>
         </div>
 
