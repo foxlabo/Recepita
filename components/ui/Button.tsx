@@ -22,7 +22,9 @@ export default function Button({
   type = 'button',
   ...rest
 }: Props) {
-  const base = 'inline-flex items-center justify-center font-medium rounded-md transition-colors';
+  const base =
+    'inline-flex items-center justify-center font-medium rounded-md transition-colors ' +
+    'disabled:cursor-not-allowed disabled:opacity-50';
   const styles = {
     primary: 'bg-recepita hover:bg-recepita-dark text-white',
     outline: 'border border-(--border) bg-(--card) hover:bg-gray-50 text-(--fg) dark:hover:bg-[#101a16]',
