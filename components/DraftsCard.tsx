@@ -65,13 +65,7 @@ export default function DraftsCard({ drafts, busy = false, onDelete, onClear, on
                   </td>
                   <td className="p-2">{x.memo || ''}</td>
                   <td className="p-2 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
-                      disabled={busy}
-                      onClick={() => onDelete(x.id)}
-                    >
+                    <Button size="sm" variant="danger" disabled={busy} onClick={() => onDelete(x.id)}>
                       削除
                     </Button>
                   </td>

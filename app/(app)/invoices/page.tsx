@@ -132,7 +132,7 @@ export default function Invoices() {
               />
             </div>
             {error && (
-              <div role="alert" className="md:col-span-3 text-sm text-red-600">
+              <div role="alert" className="md:col-span-3 text-sm text-red-700 dark:text-red-400">
                 {error}
               </div>
             )}
@@ -165,12 +165,7 @@ export default function Invoices() {
                     <td className="p-2">¥{x.amount.toLocaleString()}</td>
                     <td className="p-2">{formatDateJST(x.issueDate).replace(/-/g, '/')}</td>
                     <td className="p-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
-                        onClick={() => removeOne(x.id)}
-                      >
+                      <Button size="sm" variant="danger" onClick={() => removeOne(x.id)}>
                         削除
                       </Button>
                     </td>

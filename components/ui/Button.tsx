@@ -3,7 +3,8 @@ import { type ButtonHTMLAttributes, cloneElement, type ReactElement } from 'reac
 import { cn } from '@/lib/cn';
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'outline' | 'ghost';
+  /** `danger`: outlined destructive action (削除 etc.), red text readable in both themes. */
+  variant?: 'primary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   asChild?: boolean;
 };
@@ -26,6 +27,11 @@ export default function Button({
     primary: 'bg-recepita hover:bg-recepita-dark text-white',
     outline: 'border border-(--border) bg-(--card) hover:bg-gray-50 text-(--fg) dark:hover:bg-[#101a16]',
     ghost: 'hover:bg-gray-100 dark:hover:bg-[#101a16]',
+    // red-700 / red-400: ≥ 5.8:1 on the card and on the hover background in light / dark
+    // (red-600 reached only 3.7:1 on the dark card)
+    danger:
+      'border border-red-300 bg-(--card) text-red-700 hover:bg-red-50 ' +
+      'dark:border-red-400/40 dark:text-red-400 dark:hover:bg-red-950/40',
   }[variant];
   const sizes = {
     sm: 'px-2.5 py-1.5 text-sm',

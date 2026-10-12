@@ -74,7 +74,7 @@ export default function Signup() {
                 <b>{email}</b> 宛てに確認メールを送信しました。 メール内のリンクから認証を完了してください。
               </p>
               {devMode && verificationUrl && (
-                <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
                   <div className="font-medium">開発モード</div>
                   <a
                     className="mt-2 block break-all text-recepita dark:text-green-400 hover:underline"
@@ -106,7 +106,11 @@ export default function Signup() {
           <form onSubmit={submit} className="space-y-3">
             <h2 className="text-xl font-semibold">新規登録</h2>
 
-            {error && <div className="p-2 rounded-sm text-sm bg-red-50 text-red-800">{error}</div>}
+            {error && (
+              <div className="p-2 rounded-sm text-sm bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300">
+                {error}
+              </div>
+            )}
 
             <div className="space-y-1">
               <label className="text-sm text-(--muted)" htmlFor="signup-email">
