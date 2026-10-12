@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { type MomTone, monthOverMonth } from '@/lib/dashboard';
 import { yearMonthJST } from '@/lib/dates';
 
 type Summary = {
@@ -28,12 +29,14 @@ type ApiRes = {
 function fmtYen(n: number) {
   return `¥${(n || 0).toLocaleString()}`;
 }
-/** 前月比（%）。前月が 0 のときは比率を定義できないので null。 */
-function diffPct(cur: number, prev: number): number | null {
-  if (prev === 0) return null;
-  return Math.round(((cur - prev) / Math.abs(prev)) * 100);
-}
-const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+
+/** 前月比の色（緑=良い / 赤=悪い）。どちらのテーマでも WCAG AA（4.5:1 以上）。 */
+const TONE_CLASS: Record<MomTone, string> = {
+  good: 'text-green-700 dark:text-green-400',
+  bad: 'text-red-700 dark:text-red-400',
+  neutral: 'text-(--muted)',
+};
+const TONE_SR: Record<MomTone, string> = { good: '（改善）', bad: '（悪化）', neutral: '' };
 
 /* ===== 折れ線グラフ ===== */
 function LineChart({ months, a, b, height = 200 }: { months: string[]; a: number[]; b: number[]; height?: number }) {
@@ -229,9 +232,18 @@ export default function Dashboard() {
   }, [year, month]);
 
   const summary = data?.summary;
-  const pctSales = summary ? diffPct(summary.sales, summary.prev.sales) : null;
-  const pctExpense = summary ? diffPct(summary.expense, summary.prev.expense) : null;
-  const pctProfit = summary ? diffPct(summary.profit, summary.prev.profit) : null;
+  // 売上・利益は増加が良い、経費は減少が良い（読込前は前月 0 扱いで「—」）
+  const cards = (
+    [
+      { key: 'sales', label: '今月の売上', higherIsBetter: true },
+      { key: 'expense', label: '今月の経費', higherIsBetter: false },
+      { key: 'profit', label: '今月の利益', higherIsBetter: true },
+    ] as const
+  ).map((c) => ({
+    ...c,
+    value: summary?.[c.key] ?? 0,
+    mom: monthOverMonth(summary?.[c.key] ?? 0, summary?.prev[c.key] ?? 0, c.higherIsBetter),
+  }));
 
   return (
     <div className="space-y-4">
@@ -276,30 +288,25 @@ export default function Dashboard() {
 
       {/* サマリーカード */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {[
-          { key: 'sales', label: '今月の売上', value: summary?.sales ?? 0, pct: pctSales },
-          { key: 'expense', label: '今月の経費', value: summary?.expense ?? 0, pct: pctExpense },
-          { key: 'profit', label: '今月の利益', value: summary?.profit ?? 0, pct: pctProfit },
-        ].map((c) => (
+        {cards.map((c) => (
           <Card key={c.key}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="text-sm font-semibold text-(--muted) leading-none min-h-[18px]">{c.label}</div>
               </div>
-              <div className="mt-2 text-2xl md:text-3xl font-bold tracking-tight leading-none min-h-[36px]">
+              <div className="mt-2 text-2xl md:text-3xl font-bold tracking-tight leading-none min-h-[36px] tabular-nums">
                 {fmtYen(c.value)}
               </div>
               <div className="mt-2 text-xs font-medium">
                 <span className="text-(--muted) font-normal">前月比</span>{' '}
-                {c.pct === null ? (
-                  <span className="text-(--muted)" title="前月のデータがありません">
-                    —
-                  </span>
-                ) : (
-                  <span
-                    className={c.pct >= 0 ? 'text-green-700 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}
-                  >{`${sign(c.pct)}%`}</span>
-                )}
+                <span
+                  className={`tabular-nums ${TONE_CLASS[c.mom.tone]}`}
+                  data-tone={c.mom.tone}
+                  title={c.mom.pct === null ? '前月のデータがありません' : undefined}
+                >
+                  {c.mom.label}
+                  {TONE_SR[c.mom.tone] && <span className="sr-only">{TONE_SR[c.mom.tone]}</span>}
+                </span>
               </div>
             </CardContent>
           </Card>

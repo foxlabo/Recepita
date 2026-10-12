@@ -41,6 +41,9 @@ test('a sale added on 売上登録 shows up in the dashboard totals of the curre
   // vs. last month: sales 50,000 → 12,345 (-75%), expenses 900 → 1,500 (+67%)
   await expect(card(page, '今月の売上')).toContainText('-75%');
   await expect(card(page, '今月の経費')).toContainText('+67%');
+  // colored by meaning: fewer sales is bad, and so are more expenses (not "every increase is good")
+  await expect(card(page, '今月の売上').locator('[data-tone]')).toHaveAttribute('data-tone', 'bad');
+  await expect(card(page, '今月の経費').locator('[data-tone]')).toHaveAttribute('data-tone', 'bad');
   await expect(page.getByText('先月より売上が20%以上減少しています。')).toBeVisible();
 
   const recentSales = page.locator('.shadow-card').filter({ hasText: '直近の売上（5件）' });
