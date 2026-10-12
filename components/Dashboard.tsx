@@ -225,7 +225,7 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
   });
 
   return (
-    <div className="flex w-full items-center justify-center gap-6">
+    <div className="flex w-full flex-wrap items-center justify-center gap-6">
       <svg
         width={size}
         height={size}
@@ -236,8 +236,9 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
       >
         {arcs}
       </svg>
-      {/* 凡例: 名前は可変幅（長い名前は省略して title で全文）、金額は右揃えの等幅数字 */}
-      <ul className="min-w-0 max-w-64 flex-1 space-y-1.5 text-sm">
+      {/* 凡例: 名前は可変幅（長い名前は省略して title で全文）、金額は右揃えの等幅数字。
+          カードが狭いときは円グラフの下に回り込む */}
+      <ul className="min-w-52 max-w-64 flex-1 space-y-1.5 text-sm">
         {real.slice(0, 8).map((r, i) => (
           <li key={r.name} className="flex items-center gap-2">
             <span
