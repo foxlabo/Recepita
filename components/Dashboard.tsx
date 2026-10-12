@@ -161,7 +161,7 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
   });
 
   return (
-    <div className="flex items-center gap-4 justify-center w-full">
+    <div className="flex w-full items-center justify-center gap-6">
       <svg
         width={size}
         height={size}
@@ -172,20 +172,22 @@ function PieChart({ rows, size = 220 }: { rows: CatRow[]; size?: number }) {
       >
         {arcs}
       </svg>
-      <div className="space-y-1">
+      {/* 凡例: 名前は可変幅（長い名前は省略して title で全文）、金額は右揃えの等幅数字 */}
+      <ul className="min-w-0 max-w-64 flex-1 space-y-1.5 text-sm">
         {real.slice(0, 8).map((r, i) => (
-          <div key={r.name} className="text-sm flex items-center gap-2">
+          <li key={r.name} className="flex items-center gap-2">
             <span
-              className="w-3 h-3 inline-block rounded-sm"
+              aria-hidden="true"
+              className="size-3 shrink-0 rounded-sm"
               style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
             />
-            <span className="w-28 truncate text-(--muted)" title={r.name}>
+            <span className="min-w-0 flex-1 truncate text-(--muted)" title={r.name}>
               {r.name}
             </span>
-            <span className="font-medium">{fmtYen(r.amount)}</span>
-          </div>
+            <span className="shrink-0 pl-2 text-right font-medium tabular-nums">{fmtYen(r.amount)}</span>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -356,18 +358,18 @@ export default function Dashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-(--muted)">
-                    <th className="text-left">日付</th>
-                    <th className="text-left">取引先</th>
-                    <th className="text-right">金額</th>
+                    <th className="pb-1 text-left font-medium">日付</th>
+                    <th className="pb-1 text-left font-medium">取引先</th>
+                    <th className="pb-1 text-right font-medium">金額</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data?.recent?.expenses?.length ? (
                     data.recent.expenses.map((e) => (
                       <tr key={e.id}>
-                        <td>{e.date}</td>
-                        <td>{e.vendor}</td>
-                        <td className="text-right">{fmtYen(e.amount)}</td>
+                        <td className="py-0.5 pr-3 whitespace-nowrap tabular-nums">{e.date}</td>
+                        <td className="py-0.5 pr-3">{e.vendor}</td>
+                        <td className="py-0.5 text-right whitespace-nowrap tabular-nums">{fmtYen(e.amount)}</td>
                       </tr>
                     ))
                   ) : (
@@ -386,18 +388,18 @@ export default function Dashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-(--muted)">
-                    <th className="text-left">日付</th>
-                    <th className="text-left">取引先</th>
-                    <th className="text-right">金額</th>
+                    <th className="pb-1 text-left font-medium">日付</th>
+                    <th className="pb-1 text-left font-medium">取引先</th>
+                    <th className="pb-1 text-right font-medium">金額</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data?.recent?.invoices?.length ? (
                     data.recent.invoices.map((i) => (
                       <tr key={i.id}>
-                        <td>{i.date}</td>
-                        <td>{i.client}</td>
-                        <td className="text-right">{fmtYen(i.amount)}</td>
+                        <td className="py-0.5 pr-3 whitespace-nowrap tabular-nums">{i.date}</td>
+                        <td className="py-0.5 pr-3">{i.client}</td>
+                        <td className="py-0.5 text-right whitespace-nowrap tabular-nums">{fmtYen(i.amount)}</td>
                       </tr>
                     ))
                   ) : (

@@ -153,7 +153,7 @@ export default function Invoices() {
               <thead>
                 <tr className="bg-gray-50 dark:bg-[#101a16]">
                   <th className="text-left p-2 border-b border-(--border)">売上名</th>
-                  <th className="text-left p-2 border-b border-(--border)">金額</th>
+                  <th className="text-right p-2 pr-6 border-b border-(--border)">金額</th>
                   <th className="text-left p-2 border-b border-(--border)">発行日</th>
                   <th className="p-2 border-b border-(--border) w-28 text-right">操作</th>
                 </tr>
@@ -162,8 +162,8 @@ export default function Invoices() {
                 {list.map((x) => (
                   <tr key={x.id} className="hover:bg-gray-50/70 dark:hover:bg-[#101a16]">
                     <td className="p-2">{x.client}</td>
-                    <td className="p-2">¥{x.amount.toLocaleString()}</td>
-                    <td className="p-2">{formatDateJST(x.issueDate).replace(/-/g, '/')}</td>
+                    <td className="p-2 pr-6 text-right whitespace-nowrap tabular-nums">¥{x.amount.toLocaleString()}</td>
+                    <td className="p-2 tabular-nums">{formatDateJST(x.issueDate).replace(/-/g, '/')}</td>
                     <td className="p-2 text-right">
                       <Button size="sm" variant="danger" onClick={() => removeOne(x.id)}>
                         削除

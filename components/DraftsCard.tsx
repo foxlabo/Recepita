@@ -42,29 +42,33 @@ export default function DraftsCard({ drafts, busy = false, onDelete, onClear, on
           <table className="w-full text-sm border border-(--border) rounded-lg overflow-hidden">
             <thead className="bg-(--muted-bg) border-b border-(--border)">
               <tr className="text-left">
-                <th className="p-2">登録日</th>
-                <th className="p-2">取引日</th>
-                <th className="p-2 text-right">金額</th>
-                <th className="p-2">取引先</th>
-                <th className="p-2">区分</th>
-                <th className="p-2">品目</th>
-                <th className="p-2">メモ</th>
-                <th className="p-2" />
+                <th className="px-3 py-2 whitespace-nowrap">登録日</th>
+                <th className="px-3 py-2 whitespace-nowrap">取引日</th>
+                <th className="px-3 py-2 w-28 text-right whitespace-nowrap">金額</th>
+                <th className="px-3 py-2 min-w-40">取引先</th>
+                <th className="px-3 py-2 whitespace-nowrap">区分</th>
+                <th className="px-3 py-2">品目</th>
+                <th className="px-3 py-2 min-w-32">メモ</th>
+                <th className="px-3 py-2 w-px whitespace-nowrap">
+                  <span className="sr-only">操作</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {drafts.map((x) => (
                 <tr key={x.id} className="border-b border-(--border)">
-                  <td className="p-2 whitespace-nowrap">{x.registeredDate}</td>
-                  <td className="p-2 whitespace-nowrap">{x.tradeDate}</td>
-                  <td className="p-2 text-right">{Number(x.amount).toLocaleString()}</td>
-                  <td className="p-2">{x.vendor}</td>
-                  <td className="p-2">{x.category || '-'}</td>
-                  <td className="p-2 max-w-[360px] truncate" title={x.itemsSummary || ''}>
+                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">{x.registeredDate}</td>
+                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">{x.tradeDate}</td>
+                  <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">
+                    {Number(x.amount).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2">{x.vendor}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{x.category || '-'}</td>
+                  <td className="px-3 py-2 max-w-[360px] truncate" title={x.itemsSummary || ''}>
                     {x.itemsSummary || '-'}
                   </td>
-                  <td className="p-2">{x.memo || ''}</td>
-                  <td className="p-2 text-right">
+                  <td className="px-3 py-2">{x.memo || ''}</td>
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
                     <Button size="sm" variant="danger" disabled={busy} onClick={() => onDelete(x.id)}>
                       削除
                     </Button>
